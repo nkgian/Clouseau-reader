@@ -11,6 +11,7 @@
 
   function sourceCard(model, source) {
     const status = String(source.status || '').toLowerCase();
+    const archive = C.signals.isArchiveSource(source);
     const urls = asArray(source.urls);
     const content = [];
     if (source.detail) {
@@ -25,8 +26,8 @@
     }
     if (!content.length) content.push(UI.emptyInline('No matching URLs were returned.'));
     return UI.card(C.format.humanize(source.source || 'Unknown source'), content, {
-      icon: status === 'found' ? 'shield-alert' : status === 'error' ? 'alert-triangle' : 'shield',
-      actions: UI.sourceStatusBadge(source.status)
+      icon: archive ? 'archive' : status === 'found' ? 'shield-alert' : status === 'error' ? 'alert-triangle' : 'shield',
+      actions: archive && status === 'found' ? UI.badge('Archived', 'info', 'archive') : UI.sourceStatusBadge(source.status)
     });
   }
 
@@ -38,32 +39,43 @@
   }
 
   function overviewCard(model, sources) {
-    const found = sources.filter(function (source) { return String(source.status || '').toLowerCase() === 'found'; });
+    const found = sources.filter(C.signals.isThreatHit);
+    const archives = sources.filter(function (source) {
+      return String(source.status || '').toLowerCase() === 'found' && C.signals.isArchiveSource(source);
+    });
     const errors = sources.filter(function (source) { return String(source.status || '').toLowerCase() === 'error'; });
     const urlCount = found.reduce(function (total, source) { return total + asArray(source.urls).length; }, 0);
     if (found.length) {
-      return UI.notice('critical', 'shield-alert', 'Target appears in threat intelligence',
+      return UI.notice('critical', 'shield-alert', 'Threat listing found',
         'Listed by ' + found.map(function (source) { return C.format.humanize(source.source); }).join(', ') +
         (urlCount ? ' · ' + urlCount + ' matching ' + C.format.plural(urlCount, 'URL') : '') +
-        (errors.length ? ' · ' + errors.length + ' source(s) could not be checked.' : '.'));
+        (errors.length ? ' · ' + errors.length + ' ' + C.format.plural(errors.length, 'source') + ' could not be checked.' : '.'));
     }
     if (errors.length === sources.length && sources.length) {
       return UI.notice('warning', 'alert-triangle', 'Threat checks could not complete',
         'All sources returned errors. The target has not been cleared.');
     }
-    return UI.notice('ok', 'check', 'No threat listings reported',
-      'Checked sources did not return a listing' + (errors.length ? ', but some sources failed.' : '.'));
+    const notes = ['Checked sources did not return a threat listing'];
+    if (archives.length) notes.push('an archive record was found');
+    if (errors.length) notes.push('some sources could not be checked');
+    return UI.notice('ok', 'check', 'No threat listings reported', notes.join('; ') + '.');
   }
 
   function stats(model) {
     const threat = model.getResult('threat_lookup') || {};
     const sources = asArray(threat.sources);
-    const found = sources.filter(function (source) { return String(source.status || '').toLowerCase() === 'found'; });
+    const found = sources.filter(C.signals.isThreatHit);
+    const archives = sources.filter(function (source) {
+      return String(source.status || '').toLowerCase() === 'found' && C.signals.isArchiveSource(source);
+    });
     const errors = sources.filter(function (source) { return String(source.status || '').toLowerCase() === 'error'; });
     const urls = found.reduce(function (total, source) { return total + asArray(source.urls).length; }, 0);
+    const sourceNotes = [found.length + ' listed'];
+    if (archives.length) sourceNotes.push(archives.length + ' archive');
+    sourceNotes.push(errors.length + ' error');
     const days = waybackDays(model, threat.wayback_first_seen);
     return UI.statGrid([
-      UI.stat('Sources', sources.length, found.length + ' listed · ' + errors.length + ' error', { icon: 'database' }),
+      UI.stat('Sources', sources.length, sourceNotes.join(' · '), { icon: 'database' }),
       UI.stat('Listings', found.length, found.length ? found.map(function (source) { return C.format.humanize(source.source); }).join(', ') : 'None reported', { icon: 'shield-alert' }),
       UI.stat('Matching URLs', urls, urls ? 'Returned by threat sources' : 'No URLs returned', { icon: 'link' }),
       UI.stat('First archived', threat.wayback_first_seen ? C.format.fmtDate(threat.wayback_first_seen) : '—', days != null ? (days >= 0 ? days + ' days before this scan' : Math.abs(days) + ' days after this scan') : 'No Wayback date', { icon: 'archive' })

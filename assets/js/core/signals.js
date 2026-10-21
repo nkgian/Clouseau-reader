@@ -8,6 +8,21 @@
     return Array.isArray(value) ? value : [];
   }
 
+  function sourceName(source) {
+    if (source && typeof source === 'object') return String(source.source == null ? '' : source.source);
+    return String(source == null ? '' : source);
+  }
+
+  function isArchiveSource(source) {
+    return /wayback|archive/i.test(sourceName(source));
+  }
+
+  function isThreatHit(source) {
+    return Boolean(source) &&
+      String(source.status || '').toLowerCase() === 'found' &&
+      !isArchiveSource(source);
+  }
+
   function list(values) {
     return values.filter(Boolean).join(', ');
   }
@@ -221,7 +236,7 @@
     }
 
     const sources = asArray(threat.sources);
-    const foundSources = sources.filter(function (source) { return source.status === 'found'; });
+    const foundSources = sources.filter(isThreatHit);
     if (foundSources.length) {
       const urlCount = foundSources.reduce(function (total, source) {
         return total + asArray(source.urls).length;
@@ -229,8 +244,8 @@
       add({
         id: 'threat-listing',
         severity: 'critical',
-        title: 'Listed by threat intelligence',
-        detail: foundSources.map(function (source) { return source.source; }).join(', ') + (urlCount ? ' · ' + urlCount + ' matching URL(s)' : '') + '.',
+        title: 'Threat listing found',
+        detail: 'Listed by ' + foundSources.map(function (source) { return C.format.humanize(sourceName(source)); }).join(', ') + (urlCount ? ' · ' + urlCount + ' matching ' + C.format.plural(urlCount, 'URL') : '') + '.',
         tab: 'threats',
         source: 'threat_lookup',
         icon: 'shield-alert'
@@ -242,8 +257,8 @@
       add({
         id: 'threat-source-errors',
         severity: 'info',
-        title: 'Threat sources returned errors',
-        detail: threatErrors.map(function (source) { return source.source + ': ' + (source.detail || 'error'); }).join(' · '),
+        title: 'Some sources could not be checked',
+        detail: threatErrors.map(function (source) { return C.format.humanize(sourceName(source)) + ': ' + (source.detail || 'error'); }).join(' · '),
         tab: 'threats',
         source: 'threat_lookup'
       });
@@ -450,6 +465,8 @@
   C.signals = {
     derive: derive,
     summarise: summarise,
+    isArchiveSource: isArchiveSource,
+    isThreatHit: isThreatHit,
     SEVERITY_ORDER: SEVERITY_ORDER
   };
 })();

@@ -391,6 +391,11 @@
     equal(cors.severity, 'critical', 'credentialed CORS is critical');
     const puny = model.observations.find(function (item) { return item.id === 'punycode-host'; });
     equal(puny.tab, 'domain', 'punycode observation routes to domain');
+    const listing = model.observations.find(function (item) { return item.id === 'threat-listing'; });
+    assert(listing.detail.indexOf('Wayback') === -1, 'archive source is not a threat listing');
+    assert(C.signals.isArchiveSource({ source: 'Wayback Machine' }), 'Wayback is an archive source');
+    assert(C.signals.isArchiveSource({ source: 'archive.today' }), 'archive.today is an archive source');
+    assert(!C.signals.isArchiveSource({ source: 'OpenPhish' }), 'OpenPhish is not an archive source');
   });
 
   test('evidence: resolves saved files, reports missing files, hashes content, and sanitizes previews', async function () {
@@ -434,6 +439,8 @@
     });
     const evidenceTab = tabs.find(function (tab) { return tab.id === 'evidence'; });
     equal(evidenceTab.count, '0/1', 'evidence tab count');
+    const threatsTab = tabs.find(function (tab) { return tab.id === 'threats'; });
+    equal(threatsTab.count, 1, 'archive source inflates threat count');
     const customTab = tabs.find(function (tab) { return tab.id === 'task:custom_task'; });
     equal(customTab.label, 'Custom Task', 'unknown task label');
   });
@@ -447,6 +454,22 @@
       assert(node.textContent.trim().length > 0, id + ' rendered no text');
       assert(node.textContent.indexOf('Could not render this view') === -1, id + ' rendered an error state');
     });
+  });
+
+  test('threats: archive sources are separate from threat listings', function () {
+    const model = fixtureModel();
+    const view = C.views.threats(model);
+    const alert = view.querySelector('.notice.critical');
+    assert(alert, 'threat notice missing');
+    includes(alert.textContent, 'Threat listing found', 'neutral threat title');
+    assert(alert.textContent.indexOf('Wayback') === -1, 'archive source appears in threat notice');
+    const sources = view.querySelector('#threats-sources');
+    const wayback = Array.prototype.slice.call(sources.querySelectorAll('.card')).find(function (card) {
+      return card.textContent.indexOf('Wayback') !== -1;
+    });
+    assert(wayback, 'archive source card missing');
+    includes(wayback.textContent, 'Archived', 'archive source badge');
+    assert(wayback.textContent.indexOf('Found') === -1, 'archive source marked as found');
   });
 
   test('views: generic renderer handles unknown task output and escapes untrusted text', function () {

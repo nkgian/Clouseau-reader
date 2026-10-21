@@ -109,7 +109,7 @@
     const addresses = Array.isArray(ip.addresses) ? ip.addresses : [];
     const evidence = model.evidence && model.evidence.length ? model.evidence : [];
     const evidenceFound = evidence.filter(function (item) { return Boolean(item.record); }).length;
-    const threatHits = sources.filter(function (source) { return String(source.status || '').toLowerCase() === 'found'; }).length;
+    const threatHits = sources.filter(C.signals.isThreatHit).length;
 
     const tabs = [{ id: 'overview', label: 'Overview', icon: 'layers', count: null }];
     if (available('html_scan') || available('robots_scan') || available('headers_scan')) {

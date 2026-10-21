@@ -124,7 +124,8 @@
 
     const threat = model.getResult('threat_lookup') || {};
     asArray(threat.sources).forEach(function (source) {
-      asArray(source.urls).forEach(function (value) { add('url', value, 'Threat intel: ' + source.source, 'threats'); });
+      const sourceLabel = (C.signals.isArchiveSource(source) ? 'Archive: ' : 'Threat intel: ') + source.source;
+      asArray(source.urls).forEach(function (value) { add('url', value, sourceLabel, 'threats'); });
     });
 
     const ip = model.getResult('ip_lookup') || {};
