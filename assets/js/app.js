@@ -6,7 +6,6 @@
   const UI = C.ui;
   const signatures = new Map();
   let ingestQueue = Promise.resolve();
-  let evidenceRequest = '';
 
   function modelById(id) {
     const exact = C.state.getReport(id);
@@ -60,14 +59,14 @@
     view.appendChild(menu);
     view.appendChild(D.el('div', { class: 'empty-art' }, D.icon('file-text')));
     view.appendChild(D.el('h1', { text: 'Report not loaded' }));
-    view.appendChild(D.el('p', { class: 'lede', text: 'Open the scan folder to load this report again.' }));
+    view.appendChild(D.el('p', { class: 'lede', text: 'Open the report JSON to load this report again.' }));
     view.appendChild(D.el('div', { class: 'modal-url', style: { marginTop: '12px' }, text: route.id || '' }));
     const actions = D.el('div', { class: 'empty-actions' });
     actions.appendChild(D.el('button', {
       class: 'btn btn-primary',
       type: 'button',
-      onClick: openFolder
-    }, D.icon('folder-open'), 'Open scan folder'));
+      onClick: openFiles
+    }, D.icon('file-plus'), 'Open report JSON'));
     actions.appendChild(D.el('button', {
       class: 'btn btn-ghost',
       type: 'button',
@@ -117,17 +116,6 @@
     setTitle(model);
   }
 
-  function refreshAllEvidence() {
-    let changed = false;
-    C.state.reports.forEach(function (model) {
-      const before = (model.evidence || []).filter(function (item) { return Boolean(item.record); }).length;
-      model.evidence = C.evidence.resolveAll(model);
-      const after = model.evidence.filter(function (item) { return Boolean(item.record); }).length;
-      if (before !== after) changed = true;
-    });
-    return changed;
-  }
-
   async function ingest(options) {
     const opts = options || {};
     C.shell.setLoading(true);
@@ -162,7 +150,6 @@
           model.record = record;
           model.observations = C.signals.derive(model);
           model.iocs = C.iocs.extract(model);
-          model.evidence = C.evidence.resolveAll(model);
           C.state.addReport(model);
           signatures.set(record.key, signature);
           loaded += 1;
@@ -176,11 +163,10 @@
       C.shell.setLoading(false);
     }
 
-    refreshAllEvidence();
     if (loaded) {
       D.toast('Loaded ' + loaded + ' ' + C.format.plural(loaded, 'report') + (skipped ? ' · skipped ' + skipped + ' JSON file(s)' : ''), 'ok');
     } else if (skipped && opts.fileCount) {
-      D.toast('No Clouseau reports found in these files.', 'warning');
+      D.toast('No Clouseau reports found.', 'warning');
     }
 
     const route = C.router.parse();
@@ -214,13 +200,6 @@
     return ingestQueue;
   }
 
-  function openFolder() {
-    const input = document.getElementById('folder-input');
-    if (!input) return;
-    input.value = '';
-    input.click();
-  }
-
   function openFiles() {
     const input = document.getElementById('files-input');
     if (!input) return;
@@ -232,7 +211,7 @@
     const summary = C.files.summary();
     if (!C.state.reports.size && !summary.files) return;
     const body = D.el('div');
-    body.appendChild(D.el('p', { text: 'Clear all loaded reports and evidence?' }));
+    body.appendChild(D.el('p', { text: 'Clear all loaded reports?' }));
     D.modal({
       title: 'Clear session',
       icon: 'trash',
@@ -247,7 +226,6 @@
             C.state.clearReports();
             C.files.clear();
             signatures.clear();
-            evidenceRequest = '';
             C.router.home();
             D.toast('Session cleared', 'ok');
           }
@@ -328,50 +306,14 @@
   }
 
   function bindFileInputs() {
-    const folder = document.getElementById('folder-input');
     const files = document.getElementById('files-input');
-    const evidence = document.getElementById('evidence-input');
-
-    if (folder) {
-      folder.addEventListener('change', function () {
-        const added = C.files.addFileList(folder.files, 'folder');
-        folder.value = '';
-        if (added.length) requestIngest({ source: 'folder', fileCount: added.length });
-        else D.toast('No files selected', 'warning');
-      });
-    }
-    if (files) {
-      files.addEventListener('change', function () {
-        const added = C.files.addFileList(files.files, 'file');
-        files.value = '';
-        if (added.length) requestIngest({ source: 'files', fileCount: added.length });
-        else D.toast('No files selected', 'warning');
-      });
-    }
-    if (evidence) {
-      evidence.addEventListener('change', function () {
-        const file = evidence.files && evidence.files[0];
-        evidence.value = '';
-        if (!file) {
-          evidenceRequest = '';
-          return;
-        }
-        const model = C.state.activeReport();
-        if (!model) {
-          D.toast('Open a report before adding evidence', 'warning');
-          evidenceRequest = '';
-          return;
-        }
-        const path = evidenceRequest || file.name;
-        C.files.addFile(path, file, 'evidence');
-        refreshAllEvidence();
-        C.state.evidenceFocus = path;
-        evidenceRequest = '';
-        renderRoute(C.router.parse(), { preserveScroll: true });
-        D.toast('Evidence file added', 'ok');
-      });
-      evidence.addEventListener('cancel', function () { evidenceRequest = ''; });
-    }
+    if (!files) return;
+    files.addEventListener('change', function () {
+      const added = C.files.addFileList(files.files, 'file');
+      files.value = '';
+      if (added.length) requestIngest({ source: 'files', fileCount: added.length });
+      else D.toast('No JSON files selected', 'warning');
+    });
   }
 
   function bindDrop() {
@@ -411,33 +353,17 @@
       hide();
       C.files.addDataTransfer(event.dataTransfer).then(function (added) {
         if (added.length) requestIngest({ source: 'drop', fileCount: added.length });
-        else D.toast('No readable files in the drop', 'warning');
+        else D.toast('No JSON reports in the drop', 'warning');
       }).catch(function (error) {
         console.error(error);
-        D.toast('Could not read the dropped files', 'error');
+        D.toast('Could not read the dropped report', 'error');
       });
     });
     window.addEventListener('blur', hide);
   }
 
-  function bindLocateEvidence() {
-    window.addEventListener('clouseau:locate-evidence', function (event) {
-      if (!C.state.activeReport()) {
-        D.toast('Open a report before adding evidence', 'warning');
-        return;
-      }
-      evidenceRequest = event.detail && event.detail.ref ? event.detail.ref : '';
-      const input = document.getElementById('evidence-input');
-      if (input) {
-        input.value = '';
-        input.click();
-      }
-    });
-  }
-
   function init() {
     C.shell.init({
-      openFolder: openFolder,
       openFiles: openFiles,
       clear: clearSession,
       print: printReport,
@@ -445,7 +371,6 @@
     });
     bindFileInputs();
     bindDrop();
-    bindLocateEvidence();
     bindPrint();
 
     C.router.onChange(function (route) { renderRoute(route); });

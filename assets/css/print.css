@@ -27,9 +27,7 @@
   .copy-btn,
   .pivot-btn,
   .btn,
-  .icon-btn,
-  .evidence-frame-wrap,
-  .evidence-toolbar {
+  .icon-btn {
     display: none !important;
   }
 

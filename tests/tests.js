@@ -57,10 +57,8 @@
               content_type: 'text/html',
               bytes: 47104,
               sha256: 'a'.repeat(64),
-              evidence_file: 'evidence/20261020-091207-page-001.html',
               links: ['https://' + host + '/help']
             }],
-            evidence_errors: ['evidence/20261020-091207-page-002.html: permission denied'],
             links: ['https://' + host + '/help'],
             forms: {
               password_forms: 1,
@@ -229,7 +227,6 @@
     });
     model.observations = C.signals.derive(model);
     model.iocs = C.iocs.extract(model);
-    model.evidence = C.evidence.resolveAll(model);
     return model;
   }
 
@@ -287,66 +284,31 @@
     assert(model.unknownTasks.indexOf('custom_task') !== -1, 'unknown task retained');
     const whoisCoverage = model.coverage.find(function (item) { return item.task === 'whois_lookup'; });
     equal(whoisCoverage.status, 'partial', 'partial WHOIS coverage');
-    equal(model.evidenceErrors.length, 1, 'evidence errors retained');
     assert(model.generatedAt instanceof Date, 'generatedAt parsed');
   });
 
-  test('files: resolves report-relative and unique basename evidence references', function () {
+  test('files: adds JSON reports and ignores other files', function () {
     C.files.clear();
-    C.files.addFile('scan/report.json', new File(['{}'], 'report.json', { type: 'application/json' }), 'folder');
-    const record = C.files.addFile(
-      'scan/evidence/20261020-091207-page-001.html',
-      new File(['<html>saved</html>'], '20261020-091207-page-001.html', { type: 'text/html' }),
-      'folder'
-    );
-    const resolved = C.files.resolveReference('evidence/20261020-091207-page-001.html', 'scan/report.json');
-    equal(resolved.record && resolved.record.key, record.key, 'record resolved');
-    equal(resolved.method, 'report-relative', 'resolution method');
-    const byName = C.files.resolveReference('20261020-091207-page-001.html', 'scan/report.json');
-    assert(byName.record === record, 'basename lookup resolved');
+    const report = C.files.addFile(new File(['{}'], 'report.json', { type: 'application/json' }), 'file');
+    const page = C.files.addFile(new File(['<html></html>'], 'page.html', { type: 'text/html' }), 'file');
+    assert(report, 'JSON report added');
+    equal(page, null, 'non-JSON file ignored');
+    equal(report.path, 'report.json', 'path from file name');
     equal(C.files.reportCandidates().length, 1, 'one report candidate');
-    equal(C.files.summary().evidenceCount, 1, 'evidence count');
+    equal(C.files.summary().files, 1, 'one file in summary');
     C.files.clear();
     equal(C.files.summary().files, 0, 'cleared');
   });
 
-  test('files: falls back to FileList when dragged entries are unavailable', async function () {
+  test('files: adds JSON reports from dropped files', async function () {
     C.files.clear();
     const transfer = new DataTransfer();
     transfer.items.add(new File(['{"target":"https://drop.test","results":[]}'], 'dropped.json', { type: 'application/json' }));
+    transfer.items.add(new File(['<html></html>'], 'page.html', { type: 'text/html' }));
     const added = await C.files.addDataTransfer(transfer);
-    equal(added.length, 1, 'one file added');
+    equal(added.length, 1, 'one JSON file added');
     equal(added[0].path, 'dropped.json', 'path from file name');
     equal(C.files.reportCandidates().length, 1, 'report candidate');
-    C.files.clear();
-  });
-
-  test('files: keeps FileList snapshot when entry reads fail', async function () {
-    C.files.clear();
-    const file = new File(['{"target":"https://late.test","results":[]}'], 'late.json', { type: 'application/json' });
-    let reads = 0;
-    const transfer = {
-      items: [{
-        kind: 'file',
-        webkitGetAsEntry: function () {
-          return {
-            isFile: true,
-            name: 'late.json',
-            file: function (resolve, reject) {
-              setTimeout(function () { reject(new Error('expired')); }, 0);
-            }
-          };
-        }
-      }],
-      get files() {
-        reads += 1;
-        return reads === 1 ? [file] : [];
-      }
-    };
-    const added = await C.files.addDataTransfer(transfer);
-    equal(reads, 1, 'files snapshotted before async reads');
-    equal(added.length, 1, 'fallback file added');
-    equal(added[0].path, 'late.json', 'fallback path');
     C.files.clear();
   });
 
@@ -377,7 +339,7 @@
     const ids = model.observations.map(function (item) { return item.id; });
     [
       'punycode-host', 'mixed-script-host', 'new-domain', 'cloaking', 'cross-origin-form',
-      'password-form', 'meta-refresh', 'evidence-missing', 'missing-headers', 'weak-headers',
+      'password-form', 'meta-refresh', 'missing-headers', 'weak-headers',
       'cors-reflection', 'insecure-cookies', 'threat-listing', 'threat-source-errors',
       'recent-archive', 'tor-exit', 'dnsbl', 'unverified-tls', 'origin-leak',
       'shared-certificate', 'task-error-whois_lookup', 'unknown-modules'
@@ -398,49 +360,16 @@
     assert(!C.signals.isArchiveSource({ source: 'OpenPhish' }), 'OpenPhish is not an archive source');
   });
 
-  test('evidence: resolves saved files, reports missing files, hashes content, and sanitizes previews', async function () {
-    C.files.clear();
-    const model = fixtureModel();
-    equal(C.evidence.summary(model).total, 1, 'one reference collected');
-    equal(C.evidence.summary(model).found, 0, 'missing before file is added');
-    const record = C.files.addFile(
-      'scan/evidence/20261020-091207-page-001.html',
-      new File(['abc'], '20261020-091207-page-001.html', { type: 'text/html' }),
-      'folder'
-    );
-    model.evidence = C.evidence.resolveAll(model);
-    equal(C.evidence.summary(model).found, 1, 'resolved after file is added');
-    assert(C.evidence.isHtml(record, model.evidence[0].page), 'HTML detected');
-    assert(!C.evidence.isImage(record, model.evidence[0].page), 'HTML is not an image');
-
-    if (window.crypto && window.crypto.subtle) {
-      const digest = await C.evidence.sha256(record);
-      equal(digest, 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad', 'SHA-256 digest');
-    }
-
-    const preview = C.evidence.buildPreviewHtml(
-      '<html><head><script>alert(1)</script></head><body onload="alert(2)">' +
-      '<a href="javascript:alert(3)">click</a><img src="x" onerror="alert(4)"></body></html>'
-    );
-    assert(preview.indexOf('<script') === -1, 'script nodes removed');
-    assert(preview.indexOf('onerror') === -1, 'inline handlers removed');
-    assert(preview.indexOf('javascript:') === -1, 'javascript URLs removed');
-    includes(preview, 'Content-Security-Policy', 'CSP injected');
-    includes(preview, 'default-src \'none\'', 'restrictive CSP');
-    C.files.clear();
-  });
-
   test('shell: exposes only available tabs and adds unknown-task tabs', function () {
     const model = fixtureModel();
     const tabs = C.shell.tabDefs(model);
     const ids = tabs.map(function (tab) { return tab.id; });
-    ['overview', 'website', 'network', 'domain', 'threats', 'evidence', 'iocs', 'task:custom_task', 'raw'].forEach(function (id) {
+    ['overview', 'website', 'network', 'domain', 'threats', 'iocs', 'task:custom_task', 'raw'].forEach(function (id) {
       assert(ids.indexOf(id) !== -1, 'missing tab ' + id);
     });
-    const evidenceTab = tabs.find(function (tab) { return tab.id === 'evidence'; });
-    equal(evidenceTab.count, '0/1', 'evidence tab count');
+    assert(ids.indexOf('evidence') === -1, 'evidence tab removed');
     const threatsTab = tabs.find(function (tab) { return tab.id === 'threats'; });
-    equal(threatsTab.count, 1, 'archive source inflates threat count');
+    equal(threatsTab.count, 1, 'archive source excluded from threat count');
     const customTab = tabs.find(function (tab) { return tab.id === 'task:custom_task'; });
     equal(customTab.label, 'Custom Task', 'unknown task label');
   });
@@ -448,7 +377,7 @@
   test('views: every tab renders with the fixture model', function () {
     const model = fixtureModel();
     C.state.addReport(model);
-    ['overview', 'website', 'network', 'domain', 'threats', 'evidence', 'iocs', 'raw'].forEach(function (id) {
+    ['overview', 'website', 'network', 'domain', 'threats', 'iocs', 'raw'].forEach(function (id) {
       const node = C.views[id](model);
       assert(node instanceof Node, id + ' did not return a node');
       assert(node.textContent.trim().length > 0, id + ' rendered no text');
@@ -474,7 +403,6 @@
 
   test('views: generic renderer handles unknown task output and escapes untrusted text', function () {
     const model = fixtureModel();
-    model.evidence = C.evidence.resolveAll(model);
     const previousHash = window.location.hash;
     window.location.hash = '#/r/' + encodeURIComponent(model.id) + '/' + encodeURIComponent('task:custom_task');
     const node = C.views.generic(model);
@@ -486,7 +414,6 @@
     const hostile = C.reports.buildReport(raw, { id: 'scan/hostile.json', path: 'scan/hostile.json' });
     hostile.observations = C.signals.derive(hostile);
     hostile.iocs = C.iocs.extract(hostile);
-    hostile.evidence = [];
     const website = C.views.website(hostile);
     equal(website.querySelector('img'), null, 'untrusted title did not create an image element');
     window.location.hash = previousHash;

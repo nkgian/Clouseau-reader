@@ -107,8 +107,6 @@
     const pages = Array.isArray(html.pages) ? html.pages : [];
     const sources = Array.isArray(threat.sources) ? threat.sources : [];
     const addresses = Array.isArray(ip.addresses) ? ip.addresses : [];
-    const evidence = model.evidence && model.evidence.length ? model.evidence : [];
-    const evidenceFound = evidence.filter(function (item) { return Boolean(item.record); }).length;
     const threatHits = sources.filter(C.signals.isThreatHit).length;
 
     const tabs = [{ id: 'overview', label: 'Overview', icon: 'layers', count: null }];
@@ -123,9 +121,6 @@
     }
     if (available('threat_lookup')) {
       tabs.push({ id: 'threats', label: 'Threats', icon: 'shield-alert', count: threatHits || null });
-    }
-    if (evidence.length || (model.evidenceErrors && model.evidenceErrors.length)) {
-      tabs.push({ id: 'evidence', label: 'Evidence', icon: 'archive', count: evidence.length ? evidenceFound + '/' + evidence.length : null });
     }
     tabs.push({ id: 'iocs', label: 'IOCs', icon: 'crosshair', count: model.iocs.length || null });
     (model.unknownTasks || []).forEach(function (task) {
@@ -156,18 +151,6 @@
       tabbar.appendChild(button);
     });
     tabbar.hidden = false;
-  }
-
-  function evidenceSummary(model) {
-    if (model.evidence && model.evidence.length) {
-      const total = model.evidence.length;
-      const found = model.evidence.filter(function (item) { return Boolean(item.record); }).length;
-      return { total: total, found: found, missing: total - found };
-    }
-    if (model.evidenceErrors && model.evidenceErrors.length) {
-      return { total: model.evidenceErrors.length, found: 0, missing: model.evidenceErrors.length };
-    }
-    return null;
   }
 
   function renderHeader(model) {
@@ -209,10 +192,6 @@
     }
     if (model.errorCount) {
       title.appendChild(UI.badge(model.errorCount + ' ' + C.format.plural(model.errorCount, 'error'), 'critical', 'alert-triangle'));
-    }
-    const ev = evidenceSummary(model);
-    if (ev && ev.missing) {
-      title.appendChild(UI.badge(ev.found + ' of ' + ev.total + ' evidence files', 'warning', 'archive'));
     }
     titleRow.appendChild(title);
 
@@ -260,12 +239,6 @@
         model.errorCount + ' ' + C.format.plural(model.errorCount, 'module error')
       ));
     }
-    if (ev) {
-      meta.appendChild(D.el('span', { class: 'meta-item' + (ev.missing ? ' warn-link' : '') },
-        D.icon('archive'),
-        ev.total ? ev.found + ' of ' + ev.total + ' evidence files' : 'No evidence files'
-      ));
-    }
     if (model.size) {
       meta.appendChild(D.el('span', { class: 'meta-item' }, D.icon('file-text'), formatBytes(model.size)));
     }
@@ -294,13 +267,8 @@
     actions.appendChild(D.el('button', {
       class: 'btn btn-primary btn-sm',
       type: 'button',
-      onClick: function () { if (handlers.openFolder) handlers.openFolder(); }
-    }, D.icon('folder-open'), 'Open folder'));
-    actions.appendChild(D.el('button', {
-      class: 'btn btn-ghost btn-sm',
-      type: 'button',
       onClick: function () { if (handlers.openFiles) handlers.openFiles(); }
-    }, D.icon('file-plus'), 'Add JSON'));
+    }, D.icon('file-plus'), 'Open JSON'));
     head.appendChild(actions);
     view.appendChild(head);
 
@@ -308,11 +276,11 @@
       view.appendChild(D.el('button', {
         class: 'ingest-drop',
         type: 'button',
-        onClick: function () { if (handlers.openFolder) handlers.openFolder(); }
+        onClick: function () { if (handlers.openFiles) handlers.openFiles(); }
       },
-      D.icon('folder-open'),
-      D.el('span', { class: 'ingest-title', text: 'Drop a folder or report JSON' }),
-      D.el('span', { class: 'ingest-hint', text: 'Click to browse folders' })
+      D.icon('file-plus'),
+      D.el('span', { class: 'ingest-title', text: 'Drop a report JSON' }),
+      D.el('span', { class: 'ingest-hint', text: 'Click to browse JSON files' })
       ));
       return view;
     }
@@ -398,7 +366,6 @@
 
   function init(nextHandlers) {
     Object.assign(handlers, nextHandlers || {});
-    const openFolder = byId('open-folder');
     const openFiles = byId('open-files');
     const clear = byId('clear-library');
     const defang = byId('defang-toggle');
@@ -407,7 +374,6 @@
     const sidebarClose = byId('sidebar-close');
     const backdrop = byId('sidebar-backdrop');
 
-    if (openFolder) openFolder.addEventListener('click', function () { if (handlers.openFolder) handlers.openFolder(); });
     if (openFiles) openFiles.addEventListener('click', function () { if (handlers.openFiles) handlers.openFiles(); });
     if (clear) clear.addEventListener('click', function () {
       if (handlers.clear) handlers.clear();

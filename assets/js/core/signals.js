@@ -164,18 +164,6 @@
       });
     }
 
-    if (asArray(html.evidence_errors).length) {
-      add({
-        id: 'evidence-missing',
-        severity: 'warning',
-        title: 'Evidence files are missing',
-        detail: html.evidence_errors.length + ' evidence reference(s) could not be saved or found.',
-        tab: 'evidence',
-        source: 'html_scan',
-        icon: 'file-text'
-      });
-    }
-
     const checks = asArray(headers.checks);
     const missingHeaders = checks.filter(function (check) { return check.status === 'missing'; }).map(function (check) { return check.name; });
     const weakHeaders = checks.filter(function (check) { return check.status === 'weak'; }).map(function (check) { return check.name; });

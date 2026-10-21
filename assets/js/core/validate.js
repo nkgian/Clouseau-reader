@@ -169,11 +169,9 @@
       getError: getError,
       hasTask: function (task) { return byTask.has(task); },
       observations: [],
-      iocs: [],
-      evidence: []
+      iocs: []
     };
 
-    model.evidenceErrors = (model.getResult('html_scan') || {}).evidence_errors || [];
     return model;
   }
 

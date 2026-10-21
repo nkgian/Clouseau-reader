@@ -20,8 +20,7 @@
 <body>
   <svg class="svg-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
     <symbol id="i-logo" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.3 15.3 5.2 5.2"/><path d="M7.8 10.5s1-2 2.7-2 2.7 2 2.7 2-1 2-2.7 2-2.7-2-2.7-2Z"/><circle cx="10.5" cy="10.5" r=".6" fill="currentColor" stroke="none"/></symbol>
-    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
-    <symbol id="i-folder-open" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></symbol>
+
     <symbol id="i-file-plus" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15h6"/><path d="M12 12v6"/></symbol>
     <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
@@ -91,11 +90,8 @@
       </div>
 
       <div class="sidebar-actions">
-        <button class="btn btn-primary btn-block" id="open-folder" type="button">
-          <svg class="icon"><use href="#i-folder-open"></use></svg> Open folder
-        </button>
-        <button class="btn btn-ghost btn-block" id="open-files" type="button">
-          <svg class="icon"><use href="#i-file-plus"></use></svg> Add JSON files
+        <button class="btn btn-primary btn-block" id="open-files" type="button">
+          <svg class="icon"><use href="#i-file-plus"></use></svg> Open JSON
         </button>
       </div>
 
@@ -136,17 +132,15 @@
   <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
   <div class="drop-overlay" id="drop-overlay" hidden>
     <div class="drop-overlay-inner">
-      <svg class="icon"><use href="#i-folder-open"></use></svg>
-      <strong>Drop folder or JSON report</strong>
+      <svg class="icon"><use href="#i-file-plus"></use></svg>
+      <strong>Drop a report JSON</strong>
     </div>
   </div>
 
   <div class="toast-root" id="toast-root" aria-live="polite" aria-atomic="false"></div>
   <div id="modal-root"></div>
 
-  <input class="visually-hidden" type="file" id="folder-input" webkitdirectory directory multiple>
   <input class="visually-hidden" type="file" id="files-input" accept=".json,application/json" multiple>
-  <input class="visually-hidden" type="file" id="evidence-input">
 
   <script src="assets/js/core/dom.js"></script>
   <script src="assets/js/core/format.js"></script>
@@ -157,7 +151,6 @@
   <script src="assets/js/core/signals.js"></script>
   <script src="assets/js/core/iocs.js"></script>
   <script src="assets/js/core/integrations.js"></script>
-  <script src="assets/js/core/evidence.js"></script>
   <script src="assets/js/views/common.js"></script>
   <script src="assets/js/views/shell.js"></script>
   <script src="assets/js/views/overview.js"></script>
@@ -165,7 +158,6 @@
   <script src="assets/js/views/network.js"></script>
   <script src="assets/js/views/domain.js"></script>
   <script src="assets/js/views/threats.js"></script>
-  <script src="assets/js/views/evidence.js"></script>
   <script src="assets/js/views/iocs.js"></script>
   <script src="assets/js/views/raw.js"></script>
   <script src="assets/js/views/generic.js"></script>

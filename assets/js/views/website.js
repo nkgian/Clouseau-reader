@@ -9,11 +9,6 @@
     return Array.isArray(value) ? value : [];
   }
 
-  function openEvidence(model, ref) {
-    C.state.evidenceFocus = ref || '';
-    C.router.go(model.id, 'evidence');
-  }
-
   function errorBanner(model) {
     const errors = model.errors.filter(function (entry) {
       return entry.task === 'html_scan' || entry.task === 'robots_scan' || entry.task === 'headers_scan';
@@ -46,11 +41,6 @@
       return UI.section('Pages', 'website-pages', UI.card('Website scan', UI.notRun('The website scan'), { icon: 'globe' }), { icon: 'globe' });
     }
     const pages = asArray(html.pages);
-    const evidence = model.evidence && model.evidence.length ? model.evidence : C.evidence.resolveAll(model);
-    const evidenceByRef = new Map();
-    evidence.forEach(function (item) {
-      evidenceByRef.set(item.ref, item);
-    });
 
     const table = UI.dataTable([
       {
@@ -77,20 +67,6 @@
         key: 'links', label: 'Links', width: '60px', align: 'right',
         render: function (page) { return asArray(page.links).length; },
         value: function (page) { return asArray(page.links).length; }
-      },
-      {
-        key: 'evidence', label: 'Evidence', width: '110px', sortable: false,
-        render: function (page) {
-          if (!page.evidence_file) return D.el('span', { class: 'muted tiny', text: 'Not saved' });
-          const item = evidenceByRef.get(page.evidence_file);
-          const button = D.el('button', {
-            class: 'btn btn-ghost btn-sm',
-            type: 'button',
-            title: item && item.record ? 'Open saved page evidence' : 'Evidence file is missing',
-            onClick: function () { openEvidence(model, page.evidence_file); }
-          }, D.icon('archive'), item && item.record ? 'Open' : 'Missing');
-          return button;
-        }
       }
     ], pages, {
       pageSize: 20,
@@ -108,10 +84,6 @@
         ctx: { model: model },
         empty: 'No links extracted.'
       })));
-    }
-    if (model.evidenceErrors && model.evidenceErrors.length) {
-      content.push(UI.notice('warning', 'archive', 'Some evidence files are missing',
-        model.evidenceErrors.join(' · ')));
     }
     return UI.section('Pages', 'website-pages', content, {
       icon: 'globe',
@@ -231,7 +203,7 @@
         return typeof user === 'string' ? user : (user.name || user.slug || user.id);
       }).filter(Boolean), { type: 'username', label: 'username' })) : null,
       asArray(wp.authors).length ? UI.kvRow('Authors', UI.chipList(wp.authors, { type: 'username', label: 'username' })) : null,
-      asArray(wp.evidence).length ? UI.kvRow('Evidence', UI.chipList(wp.evidence, { type: 'text' })) : null
+        asArray(wp.evidence).length ? UI.kvRow('Fingerprints', UI.chipList(wp.evidence, { type: 'text' })) : null
     ]);
     const content = [UI.card('WordPress fingerprints', D.el('div', { class: 'stack' }, flags, facts), { icon: 'globe' })];
     const endpoints = asArray(wp.endpoints);
