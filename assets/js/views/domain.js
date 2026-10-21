@@ -68,18 +68,26 @@
       scripts.length ? UI.kvRow('Scripts', UI.chipList(scripts, { type: 'text', variant: domain.mixed_script ? 'warning' : '' })) : null,
       asArray(domain.warnings).length ? UI.kvRow('Warnings', D.el('div', { class: 'stack' }, asArray(domain.warnings).map(function (warning) { return D.el('div', { class: 'small', text: warning }); }))) : null
     ]);
-    content.push(UI.card('Domain analysis', facts, { icon: 'globe' }));
-  return UI.section('Domain', 'domain-analysis', content, {
-    icon: 'globe',
-    subtitle: domain.host || ''
-  });
+    content.push(UI.card('Domain analysis', facts, {
+      icon: 'globe',
+      subtitle: domain.host || ''
+    }));
+    return UI.section('Domain', 'domain-analysis', content, {
+      icon: 'globe',
+      subtitle: 'Parsed hostname structure, script usage, and internationalized-domain warnings.'
+    });
   }
 
   function whoisSection(model) {
     const whois = model.getResult('whois_lookup');
     if (!whois) {
       const error = model.getError('whois_lookup');
-      return UI.section('WHOIS', 'domain-whois', UI.card('WHOIS', error ? UI.notice('warning', 'alert-triangle', 'WHOIS failed', error) : UI.notRun('WHOIS lookup'), { icon: 'key' }), { icon: 'key' });
+      return UI.section('WHOIS', 'domain-whois', UI.card('WHOIS', error ? UI.notice('warning', 'alert-triangle', 'WHOIS failed', error) : UI.notRun('WHOIS lookup'), {
+        icon: 'key'
+      }), {
+        icon: 'key',
+        subtitle: 'Registration details and contact fields published by the registrar.'
+      });
     }
     const map = fieldMap(whois.fields);
     const registrar = fieldValue(map, ['Registrar']);
@@ -95,7 +103,10 @@
       whois.server ? UI.kvRow('WHOIS server', whois.server) : null,
       whois.new_domain ? UI.kvRow('Flag', UI.badge('Recently registered', 'warning', 'calendar')) : null
     ];
-    const content = [UI.card('Registration record', UI.kvList(rows), { icon: 'key' })];
+    const content = [UI.card('Registration record', UI.kvList(rows), {
+      icon: 'key',
+      subtitle: whois.server ? 'WHOIS server: ' + whois.server : 'Key registration dates and status values.'
+    })];
 
     const fields = Object.keys(whois.fields || {});
     if (fields.length) {
@@ -114,10 +125,10 @@
         UI.codeBlock(whois.raw, { actions: D.el('button', { class: 'btn btn-ghost btn-sm', type: 'button', onClick: function () { D.copyText(whois.raw, 'raw WHOIS'); } }, D.icon('copy'), 'Copy raw') })
       ], false));
     }
-  return UI.section('WHOIS', 'domain-whois', content, {
-    icon: 'key',
-    subtitle: whois.server || ''
-  });
+    return UI.section('WHOIS', 'domain-whois', content, {
+      icon: 'key',
+      subtitle: 'Registration details and contact fields published by the registrar.'
+    });
   }
 
   function integrationSection(model) {
@@ -133,9 +144,13 @@
     const blocks = values.map(function (item) {
       return UI.detailBlock(item.label, C.integrations.renderStrip(item.type, item.value, { model: model }, { limit: 5 }), 'external');
     });
-  return UI.section('Domain pivots', 'domain-pivots', UI.card('Investigate this domain', D.el('div', { class: 'stack' }, blocks), {
-    icon: 'crosshair'
-  }), { icon: 'crosshair' });
+    return UI.section('Domain pivots', 'domain-pivots', UI.card('Investigate this domain', D.el('div', { class: 'stack' }, blocks), {
+      icon: 'crosshair',
+      subtitle: 'Open external lookups for the domain and its Unicode variants.'
+    }), {
+      icon: 'crosshair',
+      subtitle: 'Open external lookups for the domain and related identifiers.'
+    });
   }
 
   C.views = C.views || {};

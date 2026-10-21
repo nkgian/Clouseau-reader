@@ -125,14 +125,17 @@
     }
 
     const entries = model.getEntries(task);
-    view.appendChild(UI.card('Generic view', UI.notice('info', 'info', 'No dedicated renderer'), { icon: 'info' }));
+    view.appendChild(UI.card('Generic view', UI.notice('info', 'info', 'No dedicated renderer'), {
+      icon: 'info',
+      subtitle: 'Raw task output shown without a dedicated visualization.'
+    }));
 
     const section = UI.section(C.format.humanize(task), 'generic-result', entries.map(function (entry, index) {
       return resultCard(model, task, entry, index, entries.length);
     }), {
       icon: 'file-text',
       count: entries.length,
-      subtitle: 'Task key: ' + task
+      subtitle: 'Task key: ' + task + '. Shown without a dedicated renderer.'
     });
     view.appendChild(section);
     return view;

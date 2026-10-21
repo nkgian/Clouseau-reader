@@ -53,7 +53,10 @@
     const known = ['a', 'aaaa', 'mx', 'ns', 'txt', 'cname'];
     const keys = known.filter(function (key) { return records[key] != null; }).concat(Object.keys(records).filter(function (key) { return known.indexOf(key) === -1; }));
     if (!keys.length) {
-      return UI.section('DNS records', 'network-dns', UI.card('DNS', UI.emptyInline('No DNS records were reported.'), { icon: 'database' }), { icon: 'database' });
+      return UI.section('DNS records', 'network-dns', UI.card('DNS', UI.emptyInline('No DNS records were reported.'), { icon: 'database' }), {
+        icon: 'database',
+        subtitle: 'DNS answers returned for the target host.'
+      });
     }
     const rows = keys.map(function (key) {
       const value = records[key];
@@ -87,7 +90,11 @@
     return UI.section('DNS records', 'network-dns', UI.card('Resolver output', UI.kvList(rows), {
       icon: 'database',
       subtitle: ip.host ? 'Records for ' + ip.host : ''
-    }), { icon: 'database', count: keys.length });
+    }), {
+      icon: 'database',
+      count: keys.length,
+      subtitle: 'DNS answers returned for the target host, including address, mail, name-server, and text records.'
+    });
   }
 
   function portsList(ports) {
@@ -150,7 +157,8 @@
     }
     return UI.section('Addresses', 'network-addresses', content, {
       icon: 'network',
-      count: addresses.length
+      count: addresses.length,
+      subtitle: 'Enriched details for each resolved address, including network ownership, reputation, and open ports.'
     });
   }
 
@@ -184,11 +192,14 @@
     const card = UI.card('Certificate', D.el('div', { class: 'stack' }, [
       percent != null ? D.el('div', {}, D.el('div', { class: 'validity-bar', title: Math.round(percent) + '% of validity window elapsed' }, D.el('span', { style: { width: percent + '%' } }))) : null,
       UI.kvList(rows)
-    ]), { icon: 'lock' });
-  return UI.section('TLS', 'network-tls', [card], {
-    icon: 'lock',
-    subtitle: tls.server_name || ''
-  });
+    ]), {
+      icon: 'lock',
+      subtitle: tls.server_name ? 'SNI: ' + tls.server_name : ''
+    });
+    return UI.section('TLS', 'network-tls', [card], {
+      icon: 'lock',
+      subtitle: 'Certificate chain, validity window, and names presented by the server.'
+    });
   }
 
   function emailSection(model) {
@@ -211,8 +222,12 @@
       email.bimi ? UI.kvRow('BIMI', UI.copyable(email.bimi, 'BIMI record', 'text')) : null
     ];
   return UI.section('Email security', 'network-email', UI.card('SPF, DMARC & BIMI', UI.kvList(rows), {
-    icon: 'mail'
-  }), { icon: 'mail' });
+    icon: 'mail',
+    subtitle: 'Records that define which servers may send mail and how receivers should handle failures.'
+  }), {
+    icon: 'mail',
+    subtitle: 'Email authentication records that affect spoofing resistance and sender trust.'
+  });
   }
 
   function cloudflareSection(model) {
@@ -238,8 +253,15 @@
       content.push(UI.emptyInline('No origin candidates were found.'));
     }
     return UI.section('Cloudflare origin', 'network-cloudflare', [
-      UI.card('CDN bypass check', content, { icon: 'crosshair' })
-    ], { icon: 'crosshair', count: candidates.length });
+      UI.card('CDN bypass check', content, {
+        icon: 'crosshair',
+        subtitle: 'Candidate hostnames and resolved addresses, compared with the CDN edge.'
+      })
+    ], {
+      icon: 'crosshair',
+      count: candidates.length,
+      subtitle: 'Checks whether subdomains resolve directly to an origin server that might bypass Cloudflare.'
+    });
   }
 
   function infraSection(model) {
@@ -269,8 +291,14 @@
       content.push(UI.card('Favicon', UI.kvList(rows), { icon: 'eye' }));
     }
     return UI.section('Infrastructure', 'network-infra', [
-      UI.card('Certificate transparency & favicon', content, { icon: 'layers' })
-    ], { icon: 'layers' });
+      UI.card('Certificate transparency & favicon', content, {
+        icon: 'layers',
+        subtitle: 'Hosting clues from certificate coverage and favicon fingerprints.'
+      })
+    ], {
+      icon: 'layers',
+      subtitle: 'Certificate-transparency domains, favicon hashes, and related infrastructure.'
+    });
   }
 
   C.views = C.views || {};

@@ -144,7 +144,10 @@ view.appendChild(UI.card('Unrecognised modules', list, {
     view.appendChild(UI.section('Raw JSON', 'raw-json', UI.card('report.json', body, {
       icon: 'code',
       subtitle: model.path
-    }), { icon: 'code' }));
+    }), {
+      icon: 'code',
+      subtitle: 'Exact report document as loaded, including fields not surfaced in the views.'
+    }));
 
     return view;
   };

@@ -377,7 +377,7 @@
     root.appendChild(toolbar);
 
     const wrap = D.el('div', { class: 'table-wrap' });
-    const hasWidths = columns.some(function (col) { return Boolean(col.width); });
+    const hasWidths = opts.wide !== false && columns.some(function (col) { return Boolean(col.width); });
     const table = D.el('table', { class: 'data-table' + (hasWidths ? ' wide' : '') });
     const thead = D.el('thead');
     const tbody = D.el('tbody');

@@ -38,7 +38,13 @@
   function pagesSection(model) {
     const html = model.getResult('html_scan');
     if (!html) {
-      return UI.section('Pages', 'website-pages', UI.card('Website scan', UI.notRun('The website scan'), { icon: 'globe' }), { icon: 'globe' });
+      return UI.section('Pages', 'website-pages', UI.card('Website scan', UI.notRun('The website scan'), {
+        icon: 'globe',
+        subtitle: 'Crawled pages, titles, and response metadata.'
+      }), {
+        icon: 'globe',
+        subtitle: 'Crawled pages and response details for each URL.'
+      });
     }
     const pages = asArray(html.pages);
 
@@ -75,7 +81,11 @@
       empty: 'No pages were recorded.'
     });
 
-    const content = [UI.card('Crawled pages', table, { flush: true, icon: 'globe', subtitle: html.start_url || '' })];
+    const content = [UI.card('Crawled pages', table, {
+      flush: true,
+      icon: 'globe',
+      subtitle: html.start_url ? 'Start URL: ' + html.start_url : 'Pages returned by the scanner.'
+    })];
     const links = C.format.unique(asArray(html.links).concat.apply(asArray(html.links), pages.map(function (page) { return asArray(page.links); })));
     if (links.length) {
       content.push(UI.collapsible('All extracted links (' + links.length + ')', UI.chipList(links, {
@@ -87,7 +97,8 @@
     }
     return UI.section('Pages', 'website-pages', content, {
       icon: 'globe',
-      count: pages.length
+      count: pages.length,
+      subtitle: 'Responses recorded during the crawl, including status, size, and extracted links.'
     });
   }
 
@@ -113,9 +124,14 @@
       { key: 'error', label: 'Error', render: function (row) { return row.error ? D.el('span', { class: 'warn-link tiny', text: row.error }) : D.el('span', { class: 'muted', text: '—' }); }, value: function (row) { return row.error || ''; } }
     ], probes, { pageSize: 20, rowLabel: 'profiles', filterPlaceholder: 'Filter profiles…', sortable: false });
     return UI.section('Cloaking', 'website-cloaking', [
-      D.el('div', { class: 'stack' }, header, UI.card('Response comparison', table, { flush: true, icon: 'eye' }))
+      D.el('div', { class: 'stack' }, header, UI.card('Response comparison', table, {
+        flush: true,
+        icon: 'eye',
+        subtitle: 'Status, title, size, final URL, and body hash for each probe profile.'
+      }))
     ], {
-      icon: 'eye'
+      icon: 'eye',
+      subtitle: 'Compares what a browser and a plain HTTP client receive, looking for content served selectively.'
     });
   }
 
@@ -132,23 +148,31 @@
     );
     content.push(summary);
     if (!entries.length) {
-      content.push(UI.card('Forms', UI.emptyInline('No forms found on the scanned pages.'), { icon: 'send' }));
+      content.push(UI.card('Forms', UI.emptyInline('No forms found on the scanned pages.'), {
+        icon: 'send',
+        subtitle: 'Submission targets and field counts for each form found on the crawled pages.'
+      }));
     } else {
       const table = UI.dataTable([
         { key: 'action', label: 'Action', render: function (row) { return UI.urlValue(row.action, { open: true, source: 'Form action', pivot: true, ctx: { model: model } }); }, value: function (row) { return row.action || ''; } },
         { key: 'method', label: 'Method', width: '80px', render: function (row) { return D.el('span', { class: 'mono tiny', text: String(row.method || '').toUpperCase() }); }, value: function (row) { return row.method || ''; } },
         { key: 'cross_origin', label: 'Origin', width: '100px', render: function (row) { return row.cross_origin ? UI.badge('Cross-origin', 'critical', 'alert-triangle') : UI.badge('Same origin', 'ok', 'check'); }, value: function (row) { return row.cross_origin ? '1' : '0'; } },
-        { key: 'password_fields', label: 'Password fields', width: '90px', align: 'right', value: function (row) { return Number(row.password_fields) || 0; } },
-        { key: 'hidden_fields', label: 'Hidden fields', width: '90px', align: 'right', value: function (row) { return Number(row.hidden_fields) || 0; } }
-      ], entries, { pageSize: 20, rowLabel: 'forms', filterPlaceholder: 'Filter forms…' });
-      content.push(UI.card('Detected forms', table, { flush: true, icon: 'send' }));
+        { key: 'password_fields', label: 'Passwords', width: '90px', align: 'right', value: function (row) { return Number(row.password_fields) || 0; } },
+        { key: 'hidden_fields', label: 'Hidden', width: '90px', align: 'right', value: function (row) { return Number(row.hidden_fields) || 0; } }
+      ], entries, { pageSize: 20, rowLabel: 'forms', filterPlaceholder: 'Filter forms…', wide: false });
+      content.push(UI.card('Detected forms', table, {
+        flush: true,
+        icon: 'send',
+        subtitle: 'Submission targets and field counts for each form found on the crawled pages.'
+      }));
     }
     if (forms.meta_refresh) {
       content.push(UI.notice('info', 'refresh', 'Meta refresh redirect', 'At least one scanned page uses a meta refresh redirect.'));
     }
     return UI.section('Forms', 'website-forms', content, {
       icon: 'send',
-      count: entries.length
+      count: entries.length,
+      subtitle: 'Forms found on crawled pages, where they submit, and whether they use cross-origin targets or password fields.'
     });
   }
 
@@ -176,9 +200,13 @@
     ].filter(Boolean);
     if (!groups.length) return null;
     return UI.section('Identifiers', 'website-identifiers', [
-      UI.card('Tracking, contact, and payment identifiers', D.el('div', { class: 'stack' }, groups), { icon: 'hash' })
+      UI.card('Tracking, contact, and payment identifiers', D.el('div', { class: 'stack' }, groups), {
+        icon: 'hash',
+        subtitle: 'Identifiers extracted from page content and grouped by type.'
+      })
     ], {
-      icon: 'hash'
+      icon: 'hash',
+      subtitle: 'Analytics IDs, messaging handles, wallets, and email addresses found on the site.'
     });
   }
 
@@ -203,9 +231,12 @@
         return typeof user === 'string' ? user : (user.name || user.slug || user.id);
       }).filter(Boolean), { type: 'username', label: 'username' })) : null,
       asArray(wp.authors).length ? UI.kvRow('Authors', UI.chipList(wp.authors, { type: 'username', label: 'username' })) : null,
-        asArray(wp.evidence).length ? UI.kvRow('Fingerprints', UI.chipList(wp.evidence, { type: 'text' })) : null
+      asArray(wp.evidence).length ? UI.kvRow('Fingerprints', UI.chipList(wp.evidence, { type: 'text' })) : null
     ]);
-    const content = [UI.card('WordPress fingerprints', D.el('div', { class: 'stack' }, flags, facts), { icon: 'globe' })];
+    const content = [UI.card('WordPress fingerprints', D.el('div', { class: 'stack' }, flags, facts), {
+      icon: 'globe',
+      subtitle: 'Detected features, version clues, users, plugins, and exposed endpoints.'
+    })];
     const endpoints = asArray(wp.endpoints);
     if (endpoints.length) {
       const table = UI.dataTable([
@@ -215,7 +246,8 @@
       content.push(UI.card('Endpoints', table, { flush: true, icon: 'list' }));
     }
     return UI.section('WordPress', 'website-wordpress', content, {
-      icon: 'globe'
+      icon: 'globe',
+      subtitle: 'WordPress version, plugins, users, and common endpoints inferred from page markup and probe paths.'
     });
   }
 
@@ -238,7 +270,10 @@
       UI.kvRow('Status', UI.httpStatusBadge(robots.status)),
       UI.kvRow('Sitemap URLs', String(robots.total_urls || 0)),
       asArray(robots.sensitive).length ? UI.kvRow('Sensitive paths', UI.chipList(robots.sensitive, { type: 'text' })) : null
-    ]), { icon: 'file-text' }));
+    ]), {
+      icon: 'file-text',
+      subtitle: 'Crawler directives and exposed paths advertised by the site.'
+    }));
     const sitemaps = asArray(robots.sitemap_files);
     if (sitemaps.length) {
       const table = UI.dataTable([
@@ -252,7 +287,8 @@
     if (groups.length) content.push(D.el('div', { class: 'card-grid' }, groupNodes));
     return UI.section('Robots & sitemaps', 'website-robots', content, {
       icon: 'file-text',
-      count: sitemaps.length
+      count: sitemaps.length,
+      subtitle: 'Crawler rules and sitemap locations advertised by the site.'
     });
   }
 
@@ -266,15 +302,22 @@
       headers.server ? UI.kvRow('Server', headers.server) : null,
       headers.powered_by ? UI.kvRow('Powered by', headers.powered_by) : null
     ]);
-    content.push(UI.card('Response', facts, { icon: 'server' }));
+    content.push(UI.card('Response', facts, {
+      icon: 'server',
+      subtitle: 'Final URL and basic server information from the header scan.'
+    }));
 
     if (asArray(headers.redirects).length) {
-      content.push(UI.card('Redirect chain', UI.redirectChain(headers.redirects), { icon: 'git-branch' }));
+      content.push(UI.card('Redirect chain', UI.redirectChain(headers.redirects), {
+        icon: 'git-branch',
+        subtitle: 'Each hop from the requested URL to the final response.'
+      }));
     }
     if (asArray(headers.checks).length) {
-  content.push(UI.card('Security headers', UI.checkRows(headers.checks), {
-    icon: 'shield'
-  }));
+      content.push(UI.card('Security headers', UI.checkRows(headers.checks), {
+        icon: 'shield',
+        subtitle: 'Browser hardening headers and whether each is missing, weak, or present.'
+      }));
     }
 
     const cors = headers.cors;
@@ -289,16 +332,24 @@
         cors.allow_origin ? UI.kvRow('Allow-Origin', cors.allow_origin) : null,
         UI.kvRow('Credentials', cors.allow_credentials ? 'Allowed' : 'Not allowed')
       ]);
-      content.push(UI.card('CORS', corsFacts, { icon: 'link' }));
+      content.push(UI.card('CORS', corsFacts, {
+        icon: 'link',
+        subtitle: 'Controls which origins may read responses in a browser. A reflected origin with credentials can expose authenticated data.'
+      }));
     }
 
     if (asArray(headers.cookies).length) {
-      content.push(UI.card('Cookies', UI.cookieTable(headers.cookies), { flush: true, icon: 'key' }));
+      content.push(UI.card('Cookies', UI.cookieTable(headers.cookies), {
+        flush: true,
+        icon: 'key',
+        subtitle: 'Cookie names and attributes that affect browser exposure and cross-site behavior.'
+      }));
     }
 
-  return UI.section('HTTP headers', 'website-headers', content, {
-    icon: 'server'
-  });
+    return UI.section('HTTP headers', 'website-headers', content, {
+      icon: 'server',
+      subtitle: 'Response headers, redirects, cookie flags, security-header checks, and CORS behavior.'
+    });
   }
 
   C.views = C.views || {};

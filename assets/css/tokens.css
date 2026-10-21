@@ -11,8 +11,8 @@
   --text-dim: #b9c1c8;
   --muted: #8b959e;
   --faint: #66717a;
-  --accent: #3f9fd4;
-  --accent-ink: #061019;
+  --accent: #456882;
+  --accent-ink: #ffffff;
   --accent-2: #4ea697;
   --danger: #d9686f;
   --danger-soft: rgba(217, 104, 111, 0.12);
@@ -51,7 +51,7 @@
   --text-dim: #3f474f;
   --muted: #626d77;
   --faint: #8a949d;
-  --accent: #1f6f9b;
+  --accent: #456882;
   --accent-ink: #ffffff;
   --accent-2: #267468;
   --danger: #a53036;

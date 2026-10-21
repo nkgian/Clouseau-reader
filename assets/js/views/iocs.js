@@ -108,9 +108,14 @@ view.appendChild(UI.card('Filters & export', D.el('div', { class: 'stack' }, too
     const tableSection = UI.section('Indicators', 'iocs-table', [
       UI.card('Extracted values', D.el('div', { class: 'stack' }, D.el('div', { class: 'toolbar' }, resultCount), tableHost), {
         icon: 'crosshair',
-        flush: false
+        flush: false,
+        subtitle: 'Unique indicators grouped by type, with their source tasks.'
       })
-    ], { icon: 'crosshair', count: items.length });
+    ], {
+      icon: 'crosshair',
+      count: items.length,
+      subtitle: 'Normalized indicators extracted from every module in the report.'
+    });
     view.appendChild(tableSection);
 
     function current() {

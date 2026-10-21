@@ -27,6 +27,7 @@
     if (!content.length) content.push(UI.emptyInline('No matching URLs were returned.'));
     return UI.card(C.format.humanize(source.source || 'Unknown source'), content, {
       icon: archive ? 'archive' : status === 'found' ? 'shield-alert' : status === 'error' ? 'alert-triangle' : 'shield',
+      subtitle: archive ? 'Archive record, not a threat listing.' : '',
       actions: archive && status === 'found' ? UI.badge('Archived', 'info', 'archive') : UI.sourceStatusBadge(source.status)
     });
   }
@@ -93,20 +94,34 @@
       UI.kvRow('Target capture', C.integrations.renderStrip('url', model.target, ctx, { ids: ['wayback-first', 'wayback-calendar', 'archive-today'], limit: 5 })),
       model.host ? UI.kvRow('Host history', C.integrations.renderStrip('domain', model.host, ctx, { ids: ['wayback-host', 'wayback-cdx'], limit: 3 })) : null
     ];
-  return UI.section('Archive history', 'threats-wayback', UI.card('Wayback Machine', UI.kvList(rows), {
-    icon: 'archive'
-  }), { icon: 'archive' });
+    return UI.section('Archive history', 'threats-wayback', UI.card('Wayback Machine', UI.kvList(rows), {
+      icon: 'archive',
+      subtitle: 'Earliest capture date and links to archive lookups.'
+    }), {
+      icon: 'archive',
+      subtitle: 'Historical capture metadata. Presence in an archive is not treated as a threat listing.'
+    });
   }
 
   function sourceSection(model) {
     const threat = model.getResult('threat_lookup');
     if (!threat) {
       const error = model.getError('threat_lookup');
-      return UI.section('Sources', 'threats-sources', UI.card('Threat intelligence', error ? UI.notice('warning', 'alert-triangle', 'Threat lookup failed', error) : UI.notRun('Threat lookup'), { icon: 'shield-alert' }), { icon: 'shield-alert' });
+      return UI.section('Sources', 'threats-sources', UI.card('Threat intelligence', error ? UI.notice('warning', 'alert-triangle', 'Threat lookup failed', error) : UI.notRun('Threat lookup'), {
+        icon: 'shield-alert'
+      }), {
+        icon: 'shield-alert',
+        subtitle: 'Threat-intelligence and archive sources checked for this host.'
+      });
     }
     const sources = asArray(threat.sources);
     if (!sources.length) {
-      return UI.section('Sources', 'threats-sources', UI.card('Threat intelligence', UI.emptyInline('No threat sources were reported.'), { icon: 'shield-alert' }), { icon: 'shield-alert' });
+      return UI.section('Sources', 'threats-sources', UI.card('Threat intelligence', UI.emptyInline('No threat sources were reported.'), {
+        icon: 'shield-alert'
+      }), {
+        icon: 'shield-alert',
+        subtitle: 'Threat-intelligence and archive sources checked for this host.'
+      });
     }
     const grid = D.el('div', { class: 'card-grid' });
     sources.forEach(function (source) { grid.appendChild(sourceCard(model, source)); });
@@ -118,7 +133,8 @@
     }
     return UI.section('Sources', 'threats-sources', content, {
       icon: 'shield-alert',
-      count: sources.length
+      count: sources.length,
+      subtitle: 'Threat-intelligence and archive sources checked for this host. Archive matches are counted separately.'
     });
   }
 

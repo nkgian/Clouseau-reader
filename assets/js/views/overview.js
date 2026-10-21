@@ -79,7 +79,8 @@
     return UI.section('Observations', 'overview-observations', content, {
       icon: 'activity',
       count: observations.length,
-      actions: actions
+      actions: actions,
+      subtitle: 'Prioritized findings derived from the scan, ordered by severity.'
     });
   }
 
@@ -123,7 +124,10 @@
       headers.server ? UI.kvRow('Server', headers.server) : null,
       headers.powered_by ? UI.kvRow('Powered by', headers.powered_by) : null
     ];
-    return UI.card('Identity', UI.kvList(rows), { icon: 'globe' });
+    return UI.card('Identity', UI.kvList(rows), {
+      icon: 'globe',
+      subtitle: 'Target URL, host, page title, and server information.'
+    });
   }
 
   function registrationCard(model) {
@@ -141,7 +145,10 @@
       nsValue ? UI.kvRow('Name servers', Array.isArray(nsValue) ? UI.chipList(nsValue, { type: 'domain' }) : nsValue) : null,
       whois.new_domain ? UI.kvRow('Flag', UI.badge('Recently registered', 'warning', 'calendar')) : null
     ];
-    return UI.card('Registration', UI.kvList(rows), { icon: 'key' });
+    return UI.card('Registration', UI.kvList(rows), {
+      icon: 'key',
+      subtitle: 'Domain age, registrar, expiry, and name-server details.'
+    });
   }
 
   function hostingCard(model) {
@@ -163,7 +170,10 @@
       address.tor_exit ? UI.kvRow('Tor exit', UI.badge('Listed', 'warning', 'network')) : null,
       asArray(address.dnsbl).length ? UI.kvRow('Blocklists', UI.chipList(address.dnsbl, { type: 'text' })) : null
     ];
-    return UI.card('Hosting & DNS', UI.kvList(rows), { icon: 'network' });
+    return UI.card('Hosting & DNS', UI.kvList(rows), {
+      icon: 'network',
+      subtitle: 'Resolved addresses, network ownership, DNS records, and reputation signals.'
+    });
   }
 
   function tlsCard(model) {
@@ -171,7 +181,10 @@
     const tls = ip.tls || {};
     const infra = model.getResult('infra_scan') || {};
     if (!tls || !Object.keys(tls).length) {
-      return UI.card('TLS & assets', UI.emptyInline('No TLS details reported.'), { icon: 'lock' });
+      return UI.card('TLS & assets', UI.emptyInline('No TLS details reported.'), {
+        icon: 'lock',
+        subtitle: 'Certificate status, validity, names, and related infrastructure.'
+      });
     }
     const status = tls.self_signed
       ? UI.badge('Self-signed', 'critical', 'alert-triangle')
@@ -190,7 +203,10 @@
       infra.favicon && infra.favicon.mmh3 != null ? UI.kvRow('Favicon hash', UI.copyable(infra.favicon.mmh3, 'favicon mmh3 hash', 'text', { mono: true })) : null,
       asArray(infra.certificate_domains).length ? UI.kvRow('Related domains', UI.chipList(infra.certificate_domains.slice(0, 8), { type: 'domain', empty: 'None' })) : null
     ];
-    return UI.card('TLS & assets', UI.kvList(rows), { icon: 'lock' });
+    return UI.card('TLS & assets', UI.kvList(rows), {
+      icon: 'lock',
+      subtitle: 'Certificate status, validity, names, and related infrastructure.'
+    });
   }
 
   function coverageSection(model) {
@@ -208,7 +224,10 @@
       row.appendChild(UI.taskStatusBadge(item.status));
       list.appendChild(row);
     });
-    return UI.card('Module coverage', list, { icon: 'layers' });
+    return UI.card('Module coverage', list, {
+      icon: 'layers',
+      subtitle: 'Modules included in this report and their completion status.'
+    });
   }
 
   function timelineSection(model) {
@@ -236,8 +255,12 @@
       if (event.detail) item.appendChild(D.el('div', { class: 'timeline-detail', text: event.detail }));
       list.appendChild(item);
     });
-    return UI.section('Timeline', 'overview-timeline', UI.card('Chronology', list, { icon: 'clock' }), {
-      icon: 'clock'
+    return UI.section('Timeline', 'overview-timeline', UI.card('Chronology', list, {
+      icon: 'clock',
+      subtitle: 'Dated events assembled from registration, archive, certificate, and scan data.'
+    }), {
+      icon: 'clock',
+      subtitle: 'Dated events assembled from the report and related lookups.'
     });
   }
 
@@ -254,8 +277,12 @@
       rows.push(UI.detailBlock('Resolved address', C.integrations.renderStrip('ip', address, ctx, { limit: 4 }), 'network'));
     }
     const body = D.el('div', { class: 'stack' }, rows);
-    return UI.section('External pivots', 'overview-pivots', UI.card('Investigate further', body, { icon: 'crosshair' }), {
-      icon: 'crosshair'
+    return UI.section('External pivots', 'overview-pivots', UI.card('Investigate further', body, {
+      icon: 'crosshair',
+      subtitle: 'External services that can extend the investigation.'
+    }), {
+      icon: 'crosshair',
+      subtitle: 'Open external lookups for the target and related indicators.'
     });
   }
 
@@ -277,14 +304,16 @@
 
     const profile = UI.section('Target profile', 'overview-profile', [
       D.el('div', { class: 'card-grid' }, identityCard(model), registrationCard(model), hostingCard(model), tlsCard(model))
-], {
-    icon: 'file-text'
-  });
+    ], {
+      icon: 'file-text',
+      subtitle: 'Core identity, registration, hosting, and certificate details.'
+    });
     view.appendChild(profile);
 
     view.appendChild(UI.section('Coverage', 'overview-coverage', coverageSection(model), {
       icon: 'layers',
-      count: model.coverage.filter(function (item) { return item.status !== 'missing'; }).length
+      count: model.coverage.filter(function (item) { return item.status !== 'missing'; }).length,
+      subtitle: 'Which scanner modules ran, partially completed, or failed.'
     }));
 
     const timeline = timelineSection(model);
