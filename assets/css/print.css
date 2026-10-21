@@ -41,6 +41,20 @@
     display: block !important;
   }
 
+  .print-doc,
+  .print-doc *,
+  .print-doc *::before,
+  .print-doc *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .print-doc .view,
+  .print-doc .empty-state {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
   .print-doc {
     max-width: none;
     color: #111827;
