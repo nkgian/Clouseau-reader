@@ -1,0 +1,247 @@
+.print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 13mm 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #111827 !important;
+    font-size: 10pt;
+  }
+
+  .toast-root,
+  .modal-backdrop,
+  .drop-overlay,
+  .sidebar-backdrop,
+  .progress-bar,
+  .section-nav,
+  .header-actions,
+  .table-toolbar,
+  .table-more,
+  .copy-btn,
+  .pivot-btn,
+  .btn,
+  .icon-btn,
+  .evidence-frame-wrap,
+  .evidence-toolbar {
+    display: none !important;
+  }
+
+  body.has-print-doc .app-shell {
+    display: none !important;
+  }
+
+  .print-root {
+    display: block !important;
+  }
+
+  .print-doc {
+    max-width: none;
+    color: #111827;
+    background: #fff;
+  }
+
+  .print-doc a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .print-cover {
+    padding: 0 0 14px;
+    margin-bottom: 14px;
+    border-bottom: 2px solid #111827;
+  }
+
+  .print-cover .print-kicker {
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #4b5563;
+  }
+
+  .print-cover h1 {
+    margin: 3px 0 5px;
+    font-family: var(--font-mono);
+    font-size: 17pt;
+    line-height: 1.25;
+    word-break: break-all;
+  }
+
+  .print-cover .print-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    font-size: 8.5pt;
+    color: #4b5563;
+  }
+
+  .print-doc .view {
+    gap: 12px;
+  }
+
+  .print-doc .section {
+    break-inside: avoid;
+  }
+
+  .print-doc .section + .section {
+    margin-top: 12px;
+  }
+
+  .print-doc .section-title {
+    margin: 12px 0 6px;
+    padding-bottom: 3px;
+    font-size: 12pt;
+    color: #111827;
+    border-bottom: 1px solid #9ca3af;
+  }
+
+  .print-doc .section-sub {
+    color: #4b5563;
+  }
+
+  .print-doc .card,
+  .print-doc .obs,
+  .print-doc .stat,
+  .print-doc .address-card,
+  .print-doc .detail-block,
+  .print-doc .profile,
+  .print-doc .notice,
+  .print-doc details.collapse {
+    color: #111827;
+    background: #fff !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  .print-doc .card-head {
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .print-doc .card-body {
+    padding: 8px 10px;
+  }
+
+  .print-doc .stat-grid {
+    gap: 5px;
+  }
+
+  .print-doc .stat {
+    padding: 6px 8px;
+  }
+
+  .print-doc .stat-label,
+  .print-doc .kv-label,
+  .print-doc .cell-sub,
+  .print-doc .muted {
+    color: #4b5563 !important;
+  }
+
+  .print-doc .stat-value,
+  .print-doc .kv-value,
+  .print-doc .cell-title {
+    color: #111827 !important;
+  }
+
+  .print-doc .badge {
+    color: #111827 !important;
+    background: #f3f4f6 !important;
+    border: 1px solid #9ca3af !important;
+  }
+
+  .print-doc .obs {
+    border-left: 3px solid #6b7280 !important;
+  }
+
+  .print-doc .obs.critical {
+    border-left-color: #b91c1c !important;
+  }
+
+  .print-doc .obs.warning {
+    border-left-color: #b45309 !important;
+  }
+
+  .print-doc .obs.info {
+    border-left-color: #1d4ed8 !important;
+  }
+
+  .print-doc .table-wrap {
+    overflow: visible;
+    border: 1px solid #d1d5db;
+    border-radius: 0;
+  }
+
+  .print-doc table.data-table {
+    font-size: 8.5pt;
+  }
+
+  .print-doc table.data-table th {
+    color: #111827;
+    background: #f3f4f6 !important;
+    border-bottom: 1px solid #9ca3af;
+  }
+
+  .print-doc table.data-table td {
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .print-doc table.data-table tr {
+    break-inside: avoid;
+  }
+
+  .print-doc .code-block {
+    max-height: none;
+    color: #111827;
+    background: #f9fafb !important;
+    border: 1px solid #d1d5db;
+    white-space: pre-wrap;
+  }
+
+  .print-doc .chip {
+    color: #111827;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+  }
+
+  .print-doc .integration-link,
+  .print-doc .ioc-filter {
+    color: #111827;
+    background: #f9fafb;
+    border: 1px solid #d1d5db;
+  }
+
+  .print-doc .timeline::before {
+    background: #9ca3af;
+  }
+
+  .print-doc .timeline li::before {
+    background: #fff;
+    border-color: #374151;
+  }
+
+  .print-doc .details-grid,
+  .print-doc .card-grid,
+  .print-doc .obs-grid,
+  .print-doc .address-grid {
+    gap: 6px;
+  }
+
+  .print-doc .print-page-break {
+    break-before: page;
+  }
+
+  .print-footer {
+    margin-top: 18px;
+    padding-top: 6px;
+    font-size: 7.5pt;
+    color: #6b7280;
+    border-top: 1px solid #d1d5db;
+  }
+}

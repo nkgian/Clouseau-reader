@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clouseau Reader tests</title>
+  <link rel="stylesheet" href="../assets/css/tokens.css">
+  <style>
+    body { margin: 0; padding: 32px 20px 80px; background: var(--bg); color: var(--text); font-family: var(--font-sans); }
+    main { max-width: 980px; margin: 0 auto; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    p.lede { color: var(--muted); margin: 0 0 20px; }
+    #summary { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+    .pill { padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 12px; }
+    .pill.pass { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, var(--border)); }
+    .pill.fail { color: var(--critical); border-color: color-mix(in srgb, var(--critical) 40%, var(--border)); }
+    ol { padding: 0; margin: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    li { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-size: 13px; }
+    li.pass strong::before { content: "PASS"; display: inline-block; width: 48px; color: var(--ok); font-size: 10px; letter-spacing: 0.08em; }
+    li.fail strong::before { content: "FAIL"; display: inline-block; width: 48px; color: var(--critical); font-size: 10px; letter-spacing: 0.08em; }
+    li span.msg { display: block; margin: 4px 0 0 56px; color: var(--critical); font-family: var(--font-mono); font-size: 11.5px; white-space: pre-wrap; }
+    li span.note { display: block; margin: 4px 0 0 56px; color: var(--muted); font-size: 11.5px; }
+    #errors { margin-top: 18px; }
+    pre { padding: 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; overflow: auto; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Clouseau Reader tests</h1>
+    <p class="lede">Core parsing, evidence, IOC, signal, tab, and view-render checks. No network access is required.</p>
+    <div id="summary">Running...</div>
+    <ol id="results"></ol>
+    <div id="errors"></div>
+  </main>
+
+  <script src="../assets/js/core/dom.js"></script>
+  <script src="../assets/js/core/format.js"></script>
+  <script src="../assets/js/core/state.js"></script>
+  <script src="../assets/js/core/router.js"></script>
+  <script src="../assets/js/core/validate.js"></script>
+  <script src="../assets/js/core/files.js"></script>
+  <script src="../assets/js/core/signals.js"></script>
+  <script src="../assets/js/core/iocs.js"></script>
+  <script src="../assets/js/core/integrations.js"></script>
+  <script src="../assets/js/core/evidence.js"></script>
+  <script src="../assets/js/views/common.js"></script>
+  <script src="../assets/js/views/shell.js"></script>
+  <script src="../assets/js/views/overview.js"></script>
+  <script src="../assets/js/views/website.js"></script>
+  <script src="../assets/js/views/network.js"></script>
+  <script src="../assets/js/views/domain.js"></script>
+  <script src="../assets/js/views/threats.js"></script>
+  <script src="../assets/js/views/evidence.js"></script>
+  <script src="../assets/js/views/iocs.js"></script>
+  <script src="../assets/js/views/raw.js"></script>
+  <script src="../assets/js/views/generic.js"></script>
+  <script src="tests.js"></script>
+</body>
+</html>
