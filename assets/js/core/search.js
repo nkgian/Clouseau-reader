@@ -55,8 +55,13 @@
   let input = null;
   let resultsNode = null;
   let countNode = null;
+  let scopeToggle = null;
+  let scopeLabel = null;
+  let scopeTarget = null;
   let allEntries = [];
+  let scopedEntries = [];
   let currentResults = [];
+  let currentReportOnly = false;
   let activeIndex = 0;
   let lastFocus = null;
   let targetTimer = null;
@@ -287,6 +292,48 @@
     return scored.map(function (item) { return item.entry; });
   }
 
+  function scopeIsActive() {
+    return Boolean(currentReportOnly && C.state.activeId);
+  }
+
+  function syncScope() {
+    const report = C.state.activeReport ? C.state.activeReport() : null;
+    const enabled = Boolean(report);
+    if (!enabled) currentReportOnly = false;
+
+    if (scopeToggle) {
+      scopeToggle.disabled = !enabled;
+      scopeToggle.checked = Boolean(enabled && currentReportOnly);
+      scopeToggle.title = enabled
+        ? 'Limit search to the active report'
+        : 'Open a report to search it alone';
+    }
+    if (scopeLabel) {
+      scopeLabel.classList.toggle('disabled', !enabled);
+      scopeLabel.title = enabled ? 'Limit search to the active report' : 'Open a report to search it alone';
+    }
+    if (scopeTarget) {
+      scopeTarget.textContent = report
+        ? (C.ui ? C.ui.displayValue(report.target, 'url') : report.target)
+        : 'No active report';
+      scopeTarget.title = report ? report.target : 'Open a report to search it alone';
+    }
+    if (input) {
+      input.placeholder = scopeIsActive()
+        ? 'Search fields in this report...'
+        : 'Search every field in loaded reports...';
+    }
+  }
+
+  function applyScope() {
+    const report = C.state.activeReport ? C.state.activeReport() : null;
+    if (!report) currentReportOnly = false;
+    scopedEntries = currentReportOnly && report
+      ? allEntries.filter(function (entry) { return entry.reportId === report.id; })
+      : allEntries;
+    syncScope();
+  }
+
   function escapeRegExp(text) {
     return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
@@ -356,7 +403,8 @@
     D.clear(resultsNode);
     const query = input ? input.value.trim() : '';
     const tokens = tokensFor(query);
-    currentResults = query ? filter(allEntries, query, { activeId: C.state.activeId }) : [];
+    const usingScope = scopeIsActive();
+    currentResults = query ? filter(scopedEntries, query, { activeId: C.state.activeId }) : [];
     activeIndex = currentResults.length ? 0 : -1;
 
     if (!allEntries.length) {
@@ -367,20 +415,31 @@
     }
 
     if (!query) {
-      const reports = C.state.sortedReports().length;
-      renderEmpty(
-        'Search every field',
-        'Find page titles, DNS records, WHOIS fields, headers, IOCs, and more across ' +
-        C.format.formatNumber(reports) + ' loaded ' + C.format.plural(reports, 'report') + '.'
-      );
-      if (countNode) countNode.textContent = C.format.formatNumber(allEntries.length) + ' ' + C.format.plural(allEntries.length, 'field');
+      if (usingScope) {
+        renderEmpty('Search this report', 'Find page titles, DNS records, WHOIS fields, headers, and more within the active report.');
+      } else {
+        const reports = C.state.sortedReports().length;
+        renderEmpty(
+          'Search every field',
+          'Find page titles, DNS records, WHOIS fields, headers, IOCs, and more across ' +
+          C.format.formatNumber(reports) + ' loaded ' + C.format.plural(reports, 'report') + '.'
+        );
+      }
+      if (countNode) {
+        countNode.textContent = C.format.formatNumber(scopedEntries.length) + ' ' +
+          C.format.plural(scopedEntries.length, 'field') + (usingScope ? ' in this report' : '');
+      }
       input.removeAttribute('aria-activedescendant');
       return;
     }
 
     if (!currentResults.length) {
-      renderEmpty('No matches for "' + query + '"',
-        'Try a shorter term or search for a value such as a domain, IP, header, or page title.');
+      renderEmpty(
+        'No matches for "' + query + '"' + (usingScope ? ' in this report' : ''),
+        usingScope
+          ? 'Try a shorter term or turn off "Current report only" to search all loaded reports.'
+          : 'Try a shorter term or search for a value such as a domain, IP, header, or page title.'
+      );
       if (countNode) countNode.textContent = '0 matches';
       input.removeAttribute('aria-activedescendant');
       return;
@@ -393,6 +452,7 @@
         type: 'button',
         id: 'spotlight-option-' + index,
         role: 'option',
+        tabindex: '-1',
         'aria-selected': 'false',
         title: entry.pathLabel + ': ' + entry.value,
         onClick: function () { choose(entry); },
@@ -471,6 +531,22 @@
     });
     panel.appendChild(resultsNode);
 
+    const scopeRow = D.el('div', { class: 'spotlight-scope-row' });
+    scopeLabel = D.el('label', { class: 'spotlight-scope' });
+    scopeToggle = D.el('input', { type: 'checkbox', id: 'spotlight-current-report' });
+    scopeToggle.addEventListener('change', function () {
+      currentReportOnly = scopeToggle.checked;
+      applyScope();
+      renderResults();
+    });
+    scopeLabel.appendChild(scopeToggle);
+    scopeLabel.appendChild(D.el('span', { class: 'spotlight-scope-track', 'aria-hidden': 'true' }));
+    scopeLabel.appendChild(D.el('span', { text: 'Current report only' }));
+    scopeRow.appendChild(scopeLabel);
+    scopeTarget = D.el('span', { class: 'spotlight-scope-target' });
+    scopeRow.appendChild(scopeTarget);
+    panel.appendChild(scopeRow);
+
     const foot = D.el('div', { class: 'spotlight-foot' });
     const hints = D.el('span', { class: 'spotlight-hints' });
     [
@@ -504,16 +580,21 @@
           event.preventDefault();
           choose(currentResults[activeIndex]);
         }
-      } else if (event.key === 'Tab') {
-        event.preventDefault();
-        input.focus();
       }
     });
     overlay.addEventListener('keydown', function (event) {
-      if (event.key === 'Tab') {
-        event.preventDefault();
-        input.focus();
-      }
+      if (event.key !== 'Tab') return;
+      const focusables = [input, scopeToggle].filter(function (node) {
+        return node && !node.disabled;
+      });
+      if (!focusables.length) return;
+      const index = focusables.indexOf(document.activeElement);
+      const step = event.shiftKey ? -1 : 1;
+      const next = index === -1
+        ? (event.shiftKey ? focusables.length - 1 : 0)
+        : (index + step + focusables.length) % focusables.length;
+      event.preventDefault();
+      focusables[next].focus();
     });
   }
 
@@ -529,6 +610,7 @@
     lastFocus = document.activeElement;
 
     allEntries = buildIndex(C.state.sortedReports());
+    applyScope();
     input.value = '';
     currentResults = [];
     activeIndex = 0;
