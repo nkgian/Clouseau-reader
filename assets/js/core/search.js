@@ -61,6 +61,10 @@
   let lastFocus = null;
   let targetTimer = null;
 
+  function shortcutLabel() {
+    return /Mac|iPhone|iPad|iPod/.test(navigator.platform || '') ? 'Cmd K' : 'Ctrl K';
+  }
+
   function moduleLabel(task) {
     const module = C.reports && C.reports.MODULE_BY_ID ? C.reports.MODULE_BY_ID.get(task) : null;
     return module ? module.label : C.format.humanize(task);
@@ -591,7 +595,7 @@
     if (trigger) {
       trigger.addEventListener('click', open);
       const key = trigger.querySelector('.spotlight-trigger-key');
-      if (key && /Mac|iPhone|iPad|iPod/.test(navigator.platform || '')) key.textContent = 'Cmd K';
+      if (key) key.textContent = shortcutLabel();
     }
     window.addEventListener('keydown', onKeydown, true);
   }
@@ -604,6 +608,7 @@
     filter: filter,
     routeForTask: routeForTask,
     entriesForReport: entriesForReport,
+    shortcutLabel: shortcutLabel,
     isOpen: function () { return Boolean(overlay && !overlay.hidden); }
   };
 })();

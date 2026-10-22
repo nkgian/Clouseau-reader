@@ -6,6 +6,19 @@
   const UI = C.ui;
   const handlers = {};
 
+  function searchButton() {
+    const shortcut = C.search && C.search.shortcutLabel ? C.search.shortcutLabel() : 'Ctrl K';
+    return D.el('button', {
+      class: 'btn btn-ghost btn-sm search-top-btn',
+      type: 'button',
+      title: 'Search report fields (' + shortcut + ')',
+      'aria-haspopup': 'dialog',
+      onClick: function () {
+        if (C.search) C.search.open();
+      }
+    }, D.icon('search'), D.el('span', { text: 'Search' }), D.el('kbd', { class: 'search-shortcut', text: shortcut }));
+  }
+
   function byId(id) {
     return document.getElementById(id);
   }
@@ -196,6 +209,7 @@
     titleRow.appendChild(title);
 
     const actions = D.el('div', { class: 'header-actions' });
+    actions.appendChild(searchButton());
     actions.appendChild(D.el('button', {
       class: 'btn btn-primary btn-sm',
       type: 'button',
@@ -264,6 +278,7 @@
     head.appendChild(titleRow);
 
     const actions = D.el('div', { class: 'home-actions' });
+    actions.appendChild(searchButton());
     actions.appendChild(D.el('button', {
       class: 'btn btn-primary btn-sm',
       type: 'button',

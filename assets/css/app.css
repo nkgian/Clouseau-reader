@@ -5332,8 +5332,8 @@ table.data-table th {
   color: var(--muted);
 }
 
-.spotlight-trigger-key {
-  margin-left: auto;
+.spotlight-trigger-key,
+.search-shortcut {
   padding: 1px 4px;
   border: 1px solid var(--border);
   border-radius: 2px;
@@ -5343,6 +5343,19 @@ table.data-table th {
   font-size: 9px;
   font-weight: 500;
   line-height: 1.4;
+}
+
+.spotlight-trigger-key {
+  margin-left: auto;
+}
+
+.search-shortcut {
+  margin-left: 2px;
+  background: var(--surface);
+}
+
+.search-top-btn {
+  padding-right: 6px;
 }
 
 .spotlight-backdrop {
