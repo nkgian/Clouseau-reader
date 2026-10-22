@@ -369,6 +369,7 @@
       print: printReport,
       copyReport: copyReport
     });
+    C.search.init();
     bindFileInputs();
     bindDrop();
     bindPrint();

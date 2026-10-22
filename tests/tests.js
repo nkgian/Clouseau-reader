@@ -419,6 +419,50 @@
     window.location.hash = previousHash;
   });
 
+  test('search: indexes fields with the right tab and section targets', function () {
+    const model = fixtureModel();
+    const entries = C.search.buildIndex([model]);
+    const find = function (value) {
+      return entries.find(function (entry) { return entry.value === value; });
+    };
+    assert(entries.length > 50, 'expected a useful search index');
+    equal(find('Sign in to your account').tab, 'website', 'page title tab');
+    equal(find('Sign in to your account').sectionId, 'website-pages', 'page title section');
+    equal(find('104.16.1.1').sectionId, 'network-dns', 'DNS record section');
+    equal(find('abuse@example.test').sectionId, 'domain-whois', 'WHOIS field section');
+    equal(find('hello custom output').tab, 'task:custom_task', 'unknown task tab');
+    equal(find('hello custom output').sectionId, 'generic-result', 'unknown task section');
+    equal(find('whois server timeout').sectionId, 'domain-whois', 'task error section');
+    const target = entries.find(function (entry) { return entry.pathLabel === 'Target'; });
+    assert(target, 'target entry missing');
+    equal(target.sectionId, 'overview-profile', 'target section');
+  });
+
+  test('search: maps task fields to the correct sections', function () {
+    equal(C.search.routeForTask('html_scan', ['forms', 'forms']).sectionId, 'website-forms', 'forms');
+    equal(C.search.routeForTask('html_scan', ['cloaking', 'probes']).sectionId, 'website-cloaking', 'cloaking');
+    equal(C.search.routeForTask('headers_scan', ['checks']).sectionId, 'website-headers', 'headers');
+    equal(C.search.routeForTask('ip_lookup', ['records', 'a']).sectionId, 'network-dns', 'DNS');
+    equal(C.search.routeForTask('ip_lookup', ['tls', 'issuer']).sectionId, 'network-tls', 'TLS');
+    equal(C.search.routeForTask('ip_lookup', ['email_security', 'spf']).sectionId, 'network-email', 'email');
+    equal(C.search.routeForTask('threat_lookup', ['wayback_first_seen']).sectionId, 'threats-wayback', 'archive');
+    equal(C.search.routeForTask('threat_lookup', ['sources']).sectionId, 'threats-sources', 'sources');
+    equal(C.search.routeForTask('custom_task', ['note']).tab, 'task:custom_task', 'unknown task');
+  });
+
+  test('search: filters by every token and ranks matching values', function () {
+    const model = fixtureModel();
+    const entries = C.search.buildIndex([model]);
+    const account = C.search.filter(entries, 'account');
+    assert(account.length > 0, 'expected a page-title match');
+    equal(account[0].value, 'Sign in to your account', 'title should rank first');
+    assert(C.search.filter(entries, 'sign account').length > 0, 'all tokens should match');
+    equal(C.search.filter(entries, 'sign missingtoken').length, 0, 'missing token should exclude the field');
+    assert(C.search.filter(entries, 'DNS records').some(function (entry) {
+      return entry.sectionId === 'network-dns';
+    }), 'section labels should be searchable');
+  });
+
   async function run() {
     const results = document.getElementById('results');
     const summary = document.getElementById('summary');
