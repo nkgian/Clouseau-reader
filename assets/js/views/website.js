@@ -27,12 +27,245 @@
     const missing = checks.filter(function (check) { return check.status === 'missing'; }).length;
     const weak = checks.filter(function (check) { return check.status === 'weak'; }).length;
     const cloaking = html.cloaking || null;
+    const links = extractedLinks(html);
     return UI.statGrid([
-      UI.stat('Pages', pages.length, pages.length ? (asArray(html.links).length + ' extracted links') : 'No pages reported', { icon: 'file-text' }),
+      UI.stat('Pages', pages.length, pages.length ? (C.format.formatNumber(links.length) + ' extracted links') : 'No pages reported', { icon: 'file-text' }),
       UI.stat('Forms', asArray(forms.forms).length, (forms.cross_origin_forms || 0) + ' cross-origin · ' + (forms.password_forms || 0) + ' password', { icon: 'send' }),
       UI.stat('Cloaking', cloaking ? UI.badge(cloaking.differs ? 'Differs' : 'Consistent', cloaking.differs ? 'critical' : 'ok', cloaking.differs ? 'eye' : 'check') : '—', cloaking ? asArray(cloaking.reasons).join(' · ') || 'Profiles compared' : 'No probe data', { icon: 'eye' }),
       UI.stat('Security headers', missing + ' missing', weak + ' weak · ' + checks.length + ' checked', { icon: 'shield' })
     ]);
+  }
+
+  function normalizedHost(host) {
+    return String(host || '').toLowerCase().replace(/\.$/, '');
+  }
+
+  function isIpLiteral(host) {
+    return /^\d{1,3}(?:\.\d{1,3}){3}$/.test(host) || /^\[[0-9a-f:.]+\]$/i.test(host);
+  }
+
+  function isPunycodeHost(host) {
+    return String(host || '').split('.').some(function (label) { return label.indexOf('xn--') === 0; });
+  }
+
+  function extractedLinks(html) {
+    const allLinks = asArray(html.links).slice();
+    asArray(html.pages).forEach(function (page) {
+      allLinks.push.apply(allLinks, asArray(page.links));
+    });
+    return C.format.unique(allLinks);
+  }
+
+  function destinationData(links, base) {
+    let baseUrl = null;
+    try {
+      baseUrl = new URL(base);
+    } catch (error) {
+      baseUrl = null;
+    }
+    const baseHost = baseUrl ? normalizedHost(baseUrl.hostname) : '';
+    return links.map(function (value) {
+      let url = null;
+      try {
+        url = baseUrl ? new URL(value, baseUrl) : new URL(value);
+      } catch (error) {
+        url = null;
+      }
+      const web = Boolean(url && (url.protocol === 'http:' || url.protocol === 'https:') && url.hostname);
+      const host = web ? normalizedHost(url.hostname) : '';
+      const internal = Boolean(host && baseHost &&
+        (host === baseHost || host === 'www.' + baseHost || baseHost === 'www.' + host));
+      return {
+        value: value,
+        host: host,
+        internal: internal,
+        ip: Boolean(host && isIpLiteral(host)),
+        punycode: Boolean(host && isPunycodeHost(host))
+      };
+    });
+  }
+
+  function linkMetric(value, label, title) {
+    return D.el('div', { class: 'link-metric', title: title || null },
+      D.el('strong', { text: C.format.formatNumber(value) }),
+      D.el('span', { text: label })
+    );
+  }
+
+  function linkDestinationsCard(model, links, html) {
+    const data = destinationData(links, html.start_url || model.target);
+    const hostCounts = new Map();
+    const internalHosts = new Set();
+    data.forEach(function (entry) {
+      if (!entry.host) return;
+      hostCounts.set(entry.host, (hostCounts.get(entry.host) || 0) + 1);
+      if (entry.internal) internalHosts.add(entry.host);
+    });
+
+    const hosts = Array.from(hostCounts.keys()).sort(function (a, b) {
+      const difference = hostCounts.get(b) - hostCounts.get(a);
+      return difference || a.localeCompare(b);
+    });
+    const topHosts = hosts.slice(0, 8);
+    const topHostSet = new Set(topHosts);
+    const rows = topHosts.map(function (host) {
+      return {
+        key: 'host:' + host,
+        host: host,
+        label: host,
+        count: hostCounts.get(host),
+        internal: internalHosts.has(host),
+        ip: isIpLiteral(host),
+        punycode: isPunycodeHost(host)
+      };
+    });
+    const shownCount = rows.reduce(function (total, row) { return total + row.count; }, 0);
+    if (data.length > shownCount) {
+      rows.push({
+        key: 'other',
+        host: '',
+        label: 'Other destinations',
+        count: data.length - shownCount,
+        other: true
+      });
+    }
+
+    const externalHosts = hosts.filter(function (host) { return !internalHosts.has(host); }).length;
+    const ipLinks = data.filter(function (entry) { return entry.ip; }).length;
+    const punycodeLinks = data.filter(function (entry) { return entry.punycode; }).length;
+    const metrics = D.el('div', { class: 'link-metrics' },
+      linkMetric(data.length, 'unique links', 'Unique URLs extracted from crawled pages.'),
+      linkMetric(externalHosts, 'external hosts', 'Distinct hosts outside the scanned site.'),
+      linkMetric(ipLinks, 'IP-literal URLs', 'Unique URLs whose hostname is an IP address.'),
+      linkMetric(punycodeLinks, 'punycode URLs', 'Unique URLs whose hostname contains a punycode label.')
+    );
+
+    const legend = D.el('div', { class: 'link-legend' },
+      D.el('span', { class: 'link-legend-item' }, D.el('i', { class: 'link-swatch internal' }), 'Internal'),
+      D.el('span', { class: 'link-legend-item' }, D.el('i', { class: 'link-swatch external' }), 'External'),
+      D.el('span', { class: 'link-legend-item' }, D.el('i', { class: 'link-swatch other' }), 'Other')
+    );
+
+    let selectedKey = null;
+    const barNodes = new Map();
+    const chart = D.el('div', { class: 'link-chart', role: 'group', 'aria-label': 'Link destinations by host' });
+    const maxCount = rows.reduce(function (maximum, row) { return Math.max(maximum, row.count); }, 0);
+
+    const listDetails = D.el('details', { class: 'collapse link-list' });
+    const listSummary = D.el('summary');
+    const listBody = D.el('div', { class: 'collapse-body' });
+    listDetails.appendChild(listSummary);
+    listDetails.appendChild(listBody);
+
+    const filterStatus = D.el('div', { class: 'link-filter-status' });
+    const filterText = D.el('span', { 'aria-live': 'polite' });
+    const clearButton = D.el('button', {
+      class: 'link-clear',
+      type: 'button',
+      hidden: true,
+      onClick: function () {
+        selectedKey = null;
+        draw();
+      }
+    }, 'Clear filter');
+    filterStatus.appendChild(filterText);
+    filterStatus.appendChild(clearButton);
+
+    function selectedRow() {
+      return rows.find(function (row) { return row.key === selectedKey; }) || null;
+    }
+
+    function filteredData() {
+      const selected = selectedRow();
+      if (!selected) return data;
+      if (selected.other) {
+        return data.filter(function (entry) { return !entry.host || !topHostSet.has(entry.host); });
+      }
+      return data.filter(function (entry) { return entry.host === selected.host; });
+    }
+
+    function draw() {
+      const selected = selectedRow();
+      barNodes.forEach(function (node, key) {
+        const active = key === selectedKey;
+        node.classList.toggle('active', active);
+        node.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+
+      const filtered = filteredData();
+      D.clear(listBody);
+      listBody.appendChild(UI.chipList(filtered.map(function (entry) { return entry.value; }), {
+        type: 'url',
+        pivot: true,
+        ctx: { model: model },
+        empty: 'No links match this destination.'
+      }));
+
+      if (!selected) {
+        listSummary.textContent = 'All extracted links (' + data.length + ')';
+        filterText.textContent = 'Click a destination bar to filter the URL list.';
+        clearButton.hidden = true;
+        return;
+      }
+
+      const label = selected.other
+        ? 'other destinations'
+        : (C.ui ? C.ui.displayValue(selected.host, 'domain') : selected.host);
+      listSummary.textContent = (selected.other ? 'Other destination links' : 'Links to ' + label) +
+        ' (' + filtered.length + ' of ' + data.length + ')';
+      filterText.textContent = 'Showing ' + C.format.formatNumber(filtered.length) + ' of ' +
+        C.format.formatNumber(data.length) + ' links ' +
+        (selected.other ? 'in other destinations' : 'to ' + label);
+      clearButton.hidden = false;
+      listDetails.open = true;
+    }
+
+    rows.forEach(function (row) {
+      const label = row.other
+        ? row.label
+        : (C.ui ? C.ui.displayValue(row.host, 'domain') : row.host);
+      const button = D.el('button', {
+        class: 'link-bar-row ' + (row.other ? 'other' : (row.internal ? 'internal' : 'external')),
+        type: 'button',
+        'aria-pressed': 'false',
+        dataset: { key: row.key, host: row.host },
+        title: label + ': ' + row.count + ' ' + C.format.plural(row.count, 'link'),
+        onClick: function () {
+          selectedKey = selectedKey === row.key ? null : row.key;
+          draw();
+        }
+      });
+      button.setAttribute('aria-label', 'Filter links to ' + label + ' (' + row.count + ')');
+      const text = D.el('span', { class: 'link-bar-label' }, D.el('bdi', { text: label }));
+      if (row.ip) text.appendChild(D.el('span', { class: 'link-flag', text: 'IP' }));
+      if (row.punycode) text.appendChild(D.el('span', { class: 'link-flag', text: 'punycode' }));
+      button.appendChild(text);
+      button.appendChild(D.el('span', { class: 'link-bar-count', text: C.format.formatNumber(row.count) }));
+      const track = D.el('span', { class: 'link-bar-track', 'aria-hidden': 'true' });
+      const width = maxCount ? Math.max(3, Math.round((row.count / maxCount) * 100)) : 0;
+      track.appendChild(D.el('span', { class: 'link-bar-fill', style: { width: width + '%' } }));
+      button.appendChild(track);
+      barNodes.set(row.key, button);
+      chart.appendChild(button);
+    });
+
+    draw();
+
+    const body = D.el('div', { class: 'stack link-destinations' },
+      metrics,
+      D.el('div', { class: 'link-chart-head' },
+        D.el('div', { class: 'link-chart-title', text: 'Destinations by host' }),
+        legend
+      ),
+      chart,
+      filterStatus,
+      listDetails
+    );
+
+    return UI.card('Link destinations', body, {
+      icon: 'link',
+      subtitle: 'Unique hosts linked from crawled pages. Click a bar to filter the URL list.'
+    });
   }
 
   function pagesSection(model) {
@@ -86,15 +319,8 @@
       icon: 'globe',
       subtitle: html.start_url ? 'Start URL: ' + html.start_url : 'Pages returned by the scanner.'
     })];
-    const links = C.format.unique(asArray(html.links).concat.apply(asArray(html.links), pages.map(function (page) { return asArray(page.links); })));
-    if (links.length) {
-      content.push(UI.collapsible('All extracted links (' + links.length + ')', UI.chipList(links, {
-        type: 'url',
-        pivot: true,
-        ctx: { model: model },
-        empty: 'No links extracted.'
-      })));
-    }
+    const links = extractedLinks(html);
+    if (links.length) content.push(linkDestinationsCard(model, links, html));
     return UI.section('Pages', 'website-pages', content, {
       icon: 'globe',
       count: pages.length,

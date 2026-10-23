@@ -389,6 +389,50 @@
     });
   });
 
+  test('website: groups link destinations and filters the URL list', function () {
+    const raw = fixtureRaw();
+    const html = raw.results.find(function (entry) { return entry.task === 'html_scan'; }).result;
+    html.links = [
+      'https://' + html.host + '/help',
+      'https://' + html.host + '/security',
+      'https://collect.example.test/login.php',
+      'http://104.16.1.1/pixel',
+      'https://xn--pple-43d.com.evil.test/landing',
+      'mailto:test@example.test'
+    ];
+    const model = C.reports.buildReport(raw, {
+      id: 'scan/link-chart.json',
+      path: 'scan/link-chart.json',
+      size: 2048,
+      lastModified: 0
+    });
+    const view = C.views.website(model);
+    const chart = view.querySelector('.link-chart');
+    assert(chart, 'link chart missing');
+    equal(chart.querySelectorAll('.link-bar-row').length, 5, 'chart row count');
+
+    const metrics = Array.prototype.map.call(view.querySelectorAll('.link-metric strong'), function (node) {
+      return node.textContent;
+    });
+    equal(metrics.join(','), '6,3,1,3', 'link chart metrics');
+
+    const details = view.querySelector('.link-list');
+    const external = chart.querySelector('.link-bar-row[data-host="collect.example.test"]');
+    assert(external, 'external destination bar missing');
+    external.click();
+    assert(details.open, 'link list should open when filtering');
+    includes(details.querySelector('summary').textContent, 'Links to collect.example.test', 'filtered list title');
+    equal(details.querySelectorAll('.chip').length, 1, 'filtered link count');
+
+    chart.querySelector('.link-bar-row[data-key="other"]').click();
+    includes(details.querySelector('summary').textContent, 'Other destination links', 'other destination title');
+    equal(details.querySelectorAll('.chip').length, 1, 'other destination link count');
+
+    external.click();
+    external.click();
+    includes(details.querySelector('summary').textContent, 'All extracted links (6)', 'cleared list title');
+  });
+
   test('threats: archive sources are separate from threat listings', function () {
     const model = fixtureModel();
     const view = C.views.threats(model);

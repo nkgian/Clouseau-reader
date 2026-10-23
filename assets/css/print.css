@@ -250,6 +250,57 @@
     break-before: page;
   }
 
+  .print-doc .link-metrics {
+    background: #fff !important;
+    border: 1px solid #d1d5db;
+  }
+
+  .print-doc .link-metric {
+    border-color: #e5e7eb;
+  }
+
+  .print-doc .link-metric strong,
+  .print-doc .link-bar-label {
+    color: #111827 !important;
+  }
+
+  .print-doc .link-metric span,
+  .print-doc .link-chart-title,
+  .print-doc .link-legend,
+  .print-doc .link-bar-count {
+    color: #4b5563 !important;
+  }
+
+  .print-doc .link-flag {
+    color: #4b5563 !important;
+    border-color: #d1d5db !important;
+  }
+
+  .print-doc .link-bar-track {
+    background: #e5e7eb !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .print-doc .link-bar-fill {
+    background: #456882 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .print-doc .link-bar-row.external .link-bar-fill {
+    background: #267468 !important;
+  }
+
+  .print-doc .link-bar-row.other .link-bar-fill {
+    background: #9ca3af !important;
+  }
+
+  .print-doc .link-filter-status,
+  .print-doc .link-clear {
+    display: none !important;
+  }
+
   .print-footer {
     margin-top: 18px;
     padding-top: 6px;
