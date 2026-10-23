@@ -106,7 +106,7 @@
       UI.stat('Observations', obs.total, obs.total ? obs.critical + ' critical · ' + obs.warning + ' warning · ' + obs.info + ' info' : 'Nothing flagged', { icon: 'activity' }),
       UI.stat('Coverage', complete + ' / ' + total, (cov.partial ? cov.partial + ' partial · ' : '') + (cov.error ? cov.error + ' failed · ' : '') + (cov.missing ? cov.missing + ' not run' : 'All modules ran'), { icon: 'layers' }),
       UI.stat('Pages scanned', pages.length, pages.length ? (asArray(html.links).length + ' links collected') : 'No website scan', { icon: 'globe' }),
-      UI.stat('IOCs', (model.iocs || []).length, labelParts.join(' · ') || 'None extracted', { icon: 'crosshair' })
+      UI.stat('Indicators', (model.iocs || []).length, labelParts.join(' · ') || 'None extracted', { icon: 'crosshair' })
     ]);
   }
 

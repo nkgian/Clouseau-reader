@@ -312,10 +312,10 @@
     C.files.clear();
   });
 
-  test('iocs: extracts, deduplicates, and exports indicators', function () {
+  test('indicators: extracts, deduplicates, and exports indicators', function () {
     const model = fixtureModel();
     const items = model.iocs;
-    assert(items.length > 10, 'expected a useful IOC set');
+    assert(items.length > 10, 'expected a useful indicator set');
     assert(items.every(function (item) { return item.value && typeof item.value === 'string'; }), 'all values defined');
     const usernameItems = items.filter(function (item) { return item.type === 'username'; });
     equal(usernameItems.length, 3, 'WordPress string users and authors become usernames');
@@ -327,11 +327,13 @@
     const csv = C.iocs.exportCsv(items, false);
     includes(csv, '"type","value","defanged","sources"', 'CSV header');
     const json = JSON.parse(C.iocs.exportJson(model, items, true));
-    equal(json.iocs.length, items.length, 'JSON export count');
-    assert(json.iocs[0].defanged.indexOf('[') !== -1 || json.iocs[0].defanged.indexOf('hxxp') !== -1, 'JSON export includes defanged values');
-    includes(C.iocs.exportMarkdown(model, items, false), '| Type | Value | Sources |', 'Markdown table');
+    equal(json.indicators.length, items.length, 'JSON export count');
+    assert(json.indicators[0].defanged.indexOf('[') !== -1 || json.indicators[0].defanged.indexOf('hxxp') !== -1, 'JSON export includes defanged values');
+    const markdown = C.iocs.exportMarkdown(model, items, false);
+    includes(markdown, '# Indicators — ', 'Markdown heading');
+    includes(markdown, '| Type | Value | Sources |', 'Markdown table');
     equal(C.iocs.copyAll(items, false).split('\n').length, items.length, 'copy-all line count');
-    assert(C.iocs.filename(model, 'csv').endsWith('_iocs_2026-10-20.csv'), 'export filename');
+    assert(C.iocs.filename(model, 'csv').endsWith('_indicators_2026-10-20.csv'), 'export filename');
   });
 
   test('signals: derives expected observations and summary counts', function () {
@@ -370,6 +372,8 @@
     assert(ids.indexOf('evidence') === -1, 'evidence tab removed');
     const threatsTab = tabs.find(function (tab) { return tab.id === 'threats'; });
     equal(threatsTab.count, 1, 'archive source excluded from threat count');
+    const indicatorsTab = tabs.find(function (tab) { return tab.id === 'iocs'; });
+    equal(indicatorsTab.label, 'Indicators', 'indicator tab label');
     const customTab = tabs.find(function (tab) { return tab.id === 'task:custom_task'; });
     equal(customTab.label, 'Custom Task', 'unknown task label');
   });

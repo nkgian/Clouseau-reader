@@ -135,7 +135,7 @@
     if (available('threat_lookup')) {
       tabs.push({ id: 'threats', label: 'Threats', icon: 'shield-alert', count: threatHits || null });
     }
-    tabs.push({ id: 'iocs', label: 'IOCs', icon: 'crosshair', count: model.iocs.length || null });
+    tabs.push({ id: 'iocs', label: 'Indicators', icon: 'crosshair', count: model.iocs.length || null });
     (model.unknownTasks || []).forEach(function (task) {
       const item = cov.get(task);
       tabs.push({

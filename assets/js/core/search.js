@@ -15,7 +15,7 @@
     network: 'Network',
     domain: 'Domain',
     threats: 'Threats',
-    iocs: 'IOCs',
+    iocs: 'Indicators',
     raw: 'Raw'
   };
 
@@ -421,7 +421,7 @@
         const reports = C.state.sortedReports().length;
         renderEmpty(
           'Search every field',
-          'Find page titles, DNS records, WHOIS fields, headers, IOCs, and more across ' +
+          'Find page titles, DNS records, WHOIS fields, headers, indicators, and more across ' +
           C.format.formatNumber(reports) + ' loaded ' + C.format.plural(reports, 'report') + '.'
         );
       }

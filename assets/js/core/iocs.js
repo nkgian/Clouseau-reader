@@ -207,7 +207,7 @@
       generated_at: model.raw.generated_at,
       exported_at: new Date().toISOString(),
       defanged: Boolean(defanged),
-      iocs: items.map(function (item) {
+      indicators: items.map(function (item) {
         return {
           type: item.type,
           label: TYPES[item.type] ? TYPES[item.type].label : item.type,
@@ -225,7 +225,7 @@
 
   function exportMarkdown(model, items, defanged) {
     const lines = [];
-    lines.push('# IOCs — ' + model.target);
+    lines.push('# Indicators — ' + model.target);
     lines.push('');
     lines.push('- Generated: ' + (model.raw.generated_at || 'unknown'));
     lines.push('- Exported: ' + new Date().toISOString());
@@ -247,7 +247,7 @@
   function filename(model, extension) {
     const host = model.host || C.format.hostFromUrl(model.target) || 'report';
     const date = model.generatedAt ? model.generatedAt.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
-    return host.replace(/[^a-z0-9.-]+/gi, '_') + '_iocs_' + date + '.' + extension;
+    return host.replace(/[^a-z0-9.-]+/gi, '_') + '_indicators_' + date + '.' + extension;
   }
 
   C.iocs = {
