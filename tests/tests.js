@@ -111,6 +111,7 @@
           result: {
             url: 'https://' + host + '/login',
             status: 200,
+            powered_by: 'PHP/8.2.18',
             headers: { 'content-type': 'text/html' },
             checks: [
               { name: 'Content-Security-Policy', status: 'missing' },
@@ -431,6 +432,27 @@
     external.click();
     external.click();
     includes(details.querySelector('summary').textContent, 'All extracted links (6)', 'cleared list title');
+  });
+
+  test('website: links WordPress and powered-by versions to CVE lookups', function () {
+    const model = fixtureModel();
+    const view = C.views.website(model);
+    const links = Array.prototype.slice.call(view.querySelectorAll('.cve-lookup'));
+    equal(links.length, 2, 'CVE lookup count');
+
+    const wordpress = links.find(function (link) { return link.href.indexOf('wpscan.com') !== -1; });
+    assert(wordpress, 'WordPress CVE lookup missing');
+    equal(wordpress.getAttribute('href'), 'https://wpscan.com/wordpress/65/', 'WordPress lookup URL');
+    includes(wordpress.getAttribute('title'), 'WordPress 6.5', 'WordPress lookup title');
+
+    const powered = links.find(function (link) { return link.href.indexOf('cve.org') !== -1; });
+    assert(powered, 'powered-by CVE lookup missing');
+    includes(powered.getAttribute('href'), 'CVERecord/SearchResults?query=PHP%208.2.18', 'powered-by lookup URL');
+    includes(powered.getAttribute('title'), 'PHP 8.2.18', 'powered-by lookup title');
+    equal(powered.getAttribute('target'), '_blank', 'lookup opens in a new tab');
+
+    const overview = C.views.overview(model);
+    assert(overview.querySelector('.cve-lookup'), 'overview powered-by lookup missing');
   });
 
   test('threats: archive sources are separate from threat listings', function () {

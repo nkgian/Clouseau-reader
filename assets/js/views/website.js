@@ -436,6 +436,16 @@
     });
   }
 
+  function wordpressVersionValue(wp) {
+    const value = UI.valueWithLookup(
+      wp.version,
+      UI.wordpressCveUrl(wp.version),
+      'Look up WordPress ' + wp.version + ' core vulnerabilities on WPScan'
+    );
+    if (wp.version_source) value.appendChild(D.el('span', { class: 'muted', text: ' · ' + wp.version_source }));
+    return value;
+  }
+
   function wordpressSection(model) {
     const html = model.getResult('html_scan');
     if (!html) return null;
@@ -448,7 +458,7 @@
       UI.badge(wp.sitemap ? 'Sitemap' : 'No sitemap', wp.sitemap ? 'ok' : 'muted', 'map-pin')
     );
     const facts = UI.kvList([
-      wp.version ? UI.kvRow('Version', wp.version + (wp.version_source ? ' · ' + wp.version_source : '')) : null,
+      wp.version ? UI.kvRow('Version', wordpressVersionValue(wp)) : null,
       wp.site_name ? UI.kvRow('Site name', wp.site_name) : null,
       asArray(wp.rest_namespaces).length ? UI.kvRow('REST namespaces', UI.chipList(wp.rest_namespaces, { type: 'text' })) : null,
       asArray(wp.themes).length ? UI.kvRow('Themes', UI.chipList(wp.themes, { type: 'text' })) : null,
@@ -526,7 +536,7 @@
       UI.kvRow('URL', UI.urlValue(headers.url, { open: true, source: 'Headers scan' })),
       UI.kvRow('Status', UI.httpStatusBadge(headers.status)),
       headers.server ? UI.kvRow('Server', headers.server) : null,
-      headers.powered_by ? UI.kvRow('Powered by', headers.powered_by) : null
+      headers.powered_by ? UI.kvRow('Powered by', UI.poweredByValue(headers.powered_by)) : null
     ]);
     content.push(UI.card('Response', facts, {
       icon: 'server',

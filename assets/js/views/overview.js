@@ -122,7 +122,7 @@
       page.title ? UI.kvRow('Page title', page.title) : null,
       page.status != null ? UI.kvRow('HTTP status', UI.httpStatusBadge(page.status)) : null,
       headers.server ? UI.kvRow('Server', headers.server) : null,
-      headers.powered_by ? UI.kvRow('Powered by', headers.powered_by) : null
+      headers.powered_by ? UI.kvRow('Powered by', UI.poweredByValue(headers.powered_by)) : null
     ];
     return UI.card('Identity', UI.kvList(rows), {
       icon: 'globe',

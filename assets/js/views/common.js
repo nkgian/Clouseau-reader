@@ -93,6 +93,61 @@
     }, D.icon(opts.warn ? 'alert-triangle' : 'external'));
   }
 
+  function cveLookupLink(url, options) {
+    const opts = options || {};
+    if (!url) return null;
+    const label = opts.label || 'CVE lookup';
+    const title = opts.title || label;
+    return D.el('a', {
+      class: 'cve-lookup',
+      href: url,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      title: title,
+      'aria-label': title
+    }, D.el('span', { text: label }), D.icon('external'));
+  }
+
+  function parseSoftwareVersion(value) {
+    const match = String(value == null ? '' : value).trim().match(
+      /^([A-Za-z][A-Za-z0-9.+-]*)\s*(?:\/| )\s*v?(\d+(?:\.\d+){0,3})/
+    );
+    if (!match) return null;
+    return {
+      product: match[1],
+      version: match[2],
+      label: match[1] + ' ' + match[2]
+    };
+  }
+
+  function softwareCveUrl(value) {
+    const software = parseSoftwareVersion(value);
+    if (!software) return null;
+    return 'https://www.cve.org/CVERecord/SearchResults?query=' + encodeURIComponent(software.label);
+  }
+
+  function wordpressCveUrl(version) {
+    const match = String(version == null ? '' : version).match(/\d+(?:\.\d+)*/);
+    if (!match) return null;
+    return 'https://wpscan.com/wordpress/' + match[0].replace(/\./g, '') + '/';
+  }
+
+  function valueWithLookup(value, url, title) {
+    const wrap = D.el('span', { class: 'cve-value' }, D.el('bdi', { text: String(value == null ? '' : value) }));
+    const link = cveLookupLink(url, { title: title });
+    if (link) wrap.appendChild(link);
+    return wrap;
+  }
+
+  function poweredByValue(value) {
+    const software = parseSoftwareVersion(value);
+    return valueWithLookup(
+      value,
+      softwareCveUrl(value),
+      software ? 'Look up CVEs for ' + software.label + ' on CVE.org' : null
+    );
+  }
+
   function valueSpan(value, type, className) {
     return D.el('span', { class: className || '' }, D.el('bdi', { text: displayValue(value, type) }));
   }
@@ -592,6 +647,12 @@
     boolBadge: boolBadge,
     copyButton: copyButton,
     externalButton: externalButton,
+    cveLookupLink: cveLookupLink,
+    parseSoftwareVersion: parseSoftwareVersion,
+    softwareCveUrl: softwareCveUrl,
+    wordpressCveUrl: wordpressCveUrl,
+    valueWithLookup: valueWithLookup,
+    poweredByValue: poweredByValue,
     valueSpan: valueSpan,
     copyable: copyable,
     hashValue: hashValue,
