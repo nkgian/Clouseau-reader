@@ -99,13 +99,13 @@
     const label = opts.label || 'CVE lookup';
     const title = opts.title || label;
     return D.el('a', {
-      class: 'cve-lookup',
+      class: 'btn btn-ghost btn-sm cve-lookup',
       href: url,
       target: '_blank',
       rel: 'noopener noreferrer',
       title: title,
       'aria-label': title
-    }, D.el('span', { text: label }), D.icon('external'));
+    }, D.icon('search'), D.el('span', { text: label }));
   }
 
   function parseSoftwareVersion(value) {
